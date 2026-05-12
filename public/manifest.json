@@ -1,0 +1,22 @@
+{
+  "name": "FreshVita",
+  "short_name": "FreshVita",
+  "description": "Premium health food and wellness services delivered to your door.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#16a34a",
+  "icons": [
+    {
+      "src": "https://images.unsplash.com/photo-1542838132-92c53300491e?w=192&h=192&fit=crop",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "https://images.unsplash.com/photo-1542838132-92c53300491e?w=512&h=512&fit=crop",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
