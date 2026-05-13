@@ -1,73 +1,8 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Standard Helpers
-    function isSignedIn() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
-    }
-
-    function isAdmin() {
-      return isSignedIn() && 
-             request.auth.token.email == 'kopitebbr@gmail.com' && 
-             request.auth.token.email_verified == true;
-    }
-
-    function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
-    }
-
-    // Validation Blueprints
-    function isValidFruit(data) {
-      return data.keys().hasAll(['id', 'name', 'price', 'unit', 'image']) &&
-             data.id is string && data.id.size() <= 64 &&
-             data.name is string && data.name.size() <= 100 &&
-             data.price is number && data.price >= 0 &&
-             data.unit is string && data.unit.size() <= 20 &&
-             data.image is string && data.image.size() <= 1000000;
-    }
-
-    function isValidReward(data) {
-      return data.keys().hasAll(['id', 'title', 'points', 'image', 'type']) &&
-             data.id is string && data.id.size() <= 64 &&
-             data.title is string && data.title.size() <= 100 &&
-             data.points is number && data.points >= 0 &&
-             data.image is string && data.image.size() <= 1000000 &&
-             data.type in ['Gift Hamper', 'Voucher', 'Service'];
-    }
-
-    function isValidReport(data) {
-      return data.keys().hasAll(['id', 'title', 'status', 'summary', 'date']) &&
-             data.id is string && data.id.size() <= 64 &&
-             data.title is string && data.title.size() <= 100 &&
-             data.status in ['Normal', 'Action Required'] &&
-             data.summary is string && data.summary.size() <= 1000 &&
-             data.date is string && data.date.size() <= 50;
-    }
-
-    // Global Deny
     match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Collections
-    match /fruits/{fruitId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /rewards/{rewardId} {
-      allow read: if true;
-      allow create, update, delete: if isAdmin();
-    }
-
-    match /users/{userId}/reports/{reportId} {
-      allow read: if isOwner(userId);
-      allow create, update: if isOwner(userId) && isValidReport(request.resource.data) && isValidId(reportId);
-      allow delete: if isOwner(userId);
+      allow read, write: if request.auth != null;
     }
   }
 }
