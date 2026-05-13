@@ -1248,6 +1248,8 @@ const FruitSection = ({
   fruits, 
   onImageUpload, 
   onReset, 
+  onClearAll,
+  onAddFruit,
   onAddToCart,
   reviews,
   onRate,
@@ -1260,6 +1262,8 @@ const FruitSection = ({
   fruits: Fruit[], 
   onImageUpload: (id: string, file: File) => void, 
   onReset: () => void,
+  onClearAll: () => void,
+  onAddFruit: () => void,
   onAddToCart: (fruit: Fruit, direct?: boolean) => void,
   reviews: Review[],
   onRate: (id: string, name: string) => void,
@@ -1350,12 +1354,28 @@ const FruitSection = ({
             centered={false}
           />
           {user?.email === OWNER_EMAIL && (
-            <button 
-              onClick={onReset}
-              className="px-6 py-4 bg-gray-50 text-gray-400 border border-gray-100 rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center gap-2 active:scale-95"
-            >
-              <RefreshCcw size={16} /> Reset All Images
-            </button>
+            <div className="flex gap-3">
+              <button 
+                onClick={onAddFruit}
+                className="px-6 py-4 bg-green-600 text-white rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-green-700 transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-green-100"
+              >
+                <Plus size={16} /> Add New Fruit
+              </button>
+              <button 
+                onClick={onReset}
+                className="px-6 py-4 bg-gray-50 text-gray-400 border border-gray-100 rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center gap-2 active:scale-95"
+                title="Reset to Demo Defaults"
+              >
+                <RefreshCcw size={16} /> Reset
+              </button>
+              <button 
+                onClick={onClearAll}
+                className="px-6 py-4 bg-red-50 text-red-400 border border-red-100 rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-red-100 transition-all flex items-center gap-2 active:scale-95"
+                title="Wipe Menu Clean"
+              >
+                <Trash2 size={16} /> Clear All
+              </button>
+            </div>
           )}
         </div>
 
@@ -2411,7 +2431,21 @@ const SubscriptionsSection = ({ onSelect }: { onSelect: (plan: SubscriptionPlan)
   );
 };
 
-const GiftVoucherSection = ({ onBuy }: { onBuy: (template: any) => void }) => {
+const GiftVoucherSection = ({ 
+  templates,
+  onBuy,
+  onReset,
+  onClearAll,
+  onAdd,
+  user
+}: { 
+  templates: any[],
+  onBuy: (template: any) => void,
+  onReset: () => void,
+  onClearAll: () => void,
+  onAdd: () => void,
+  user: User | null
+}) => {
   return (
     <section id="vouchers" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-6">
@@ -2430,10 +2464,24 @@ const GiftVoucherSection = ({ onBuy }: { onBuy: (template: any) => void }) => {
               <p className="text-gray-400 text-sm font-medium leading-relaxed max-w-sm mb-12">
                 Surprise your loved ones with FreshVita gift vouchers. Perfect for birthdays, wellness gifts, or just a "thinking of you" gesture.
               </p>
+              
+              {user?.email === OWNER_EMAIL && (
+                <div className="flex flex-wrap gap-2 mb-8">
+                  <button onClick={onAdd} className="px-5 py-3 bg-green-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-green-700 transition-all flex items-center gap-2">
+                    <Plus size={14} /> Add Voucher
+                  </button>
+                  <button onClick={onReset} className="px-5 py-3 bg-white/10 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-white/20 transition-all flex items-center gap-2">
+                    <RefreshCcw size={14} /> Reset
+                  </button>
+                  <button onClick={onClearAll} className="px-5 py-3 bg-red-500/20 text-red-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-red-500/40 transition-all flex items-center gap-2">
+                    <Trash2 size={14} /> Clear
+                  </button>
+                </div>
+              )}
             </div>
 
             <div className="grid grid-cols-1 gap-4">
-              {VOUCHER_TEMPLATES.map((v, i) => (
+              {templates.map((v, i) => (
                 <button
                   key={i}
                   onClick={() => onBuy(v)}
@@ -2864,12 +2912,18 @@ const RewardsSection = ({
   points, 
   onRedeem, 
   onImageUpload,
+  onReset,
+  onClearAll,
+  onAdd,
   user
 }: { 
   rewards: Reward[], 
   points: number, 
   onRedeem: (reward: Reward) => void,
   onImageUpload: (id: string, file: File) => void,
+  onReset: () => void,
+  onClearAll: () => void,
+  onAdd: () => void,
   user: User | null
 }) => {
   return (
@@ -2895,6 +2949,29 @@ const RewardsSection = ({
             </div>
           </div>
         </div>
+
+        {user?.email === OWNER_EMAIL && (
+          <div className="flex flex-wrap gap-4 mb-12">
+            <button 
+              onClick={onAdd}
+              className="px-6 py-4 bg-gray-900 text-white rounded-[24px] text-[10px] font-black uppercase tracking-widest hover:bg-green-600 transition-all flex items-center gap-2 active:scale-95 shadow-xl"
+            >
+              <Plus size={16} /> New Reward
+            </button>
+            <button 
+              onClick={onReset}
+              className="px-6 py-4 bg-white text-gray-400 border border-gray-100 rounded-[24px] text-[10px] font-black uppercase tracking-widest hover:bg-gray-50 transition-all flex items-center gap-2 active:scale-95"
+            >
+              <RefreshCcw size={16} /> Reset Catalog
+            </button>
+            <button 
+              onClick={onClearAll}
+              className="px-6 py-4 bg-red-50 text-red-400 border border-red-100 rounded-[24px] text-[10px] font-black uppercase tracking-widest hover:bg-red-100 transition-all flex items-center gap-2 active:scale-95"
+            >
+              <Trash2 size={16} /> Wipe Rewards
+            </button>
+          </div>
+        )}
 
         <div className="grid md:grid-cols-3 gap-8">
           {rewards.map((reward, i) => (
@@ -4188,6 +4265,10 @@ export default function App() {
     const saved = localStorage.getItem('freshvita_rewards');
     return saved ? JSON.parse(saved) : REWARDS_DATA;
   });
+  const [voucherTemplates, setVoucherTemplates] = useState(() => {
+    const saved = localStorage.getItem('freshvita_voucher_templates');
+    return saved ? JSON.parse(saved) : VOUCHER_TEMPLATES;
+  });
   const [paymentQR, setPaymentQR] = useState('');
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -4509,7 +4590,118 @@ export default function App() {
     if (window.confirm('Revert all fruit images to farm defaults?')) {
       setFruits(FRUITS_DATA);
       localStorage.removeItem('freshvita_fruits');
+      notify('Cache Cleared', 'Fruits menu has been reset to defaults.', 'system');
     }
+  };
+
+  const handleResetRewards = () => {
+    if (window.confirm('Reset all rewards to system defaults?')) {
+      setRewards(REWARDS_DATA);
+      localStorage.removeItem('freshvita_rewards');
+      notify('Rewards Reset', 'The rewards catalog has been restored to default items.', 'system');
+    }
+  };
+
+  const handleClearAllRewards = () => {
+    if (window.confirm('Wipe the rewards catalog clean? This cannot be undone.')) {
+      setRewards([]);
+      localStorage.setItem('freshvita_rewards', JSON.stringify([]));
+      notify('Catalog Wiped', 'All reward items have been removed.', 'system');
+    }
+  };
+
+  const handleAddReward = () => {
+    const title = window.prompt('Reward Title:');
+    if (!title) return;
+    const points = parseInt(window.prompt('Points Required:') || '0');
+    const type = (window.prompt('Type (Gift Hamper, Voucher, Service):') || 'Service') as Reward['type'];
+
+    const newReward: Reward = {
+      id: `reward-${Math.random().toString(36).substr(2, 9)}`,
+      title,
+      points,
+      type,
+      image: 'https://images.unsplash.com/photo-1549465220-1d8c9d9c6703?w=800&fit=crop', // Placeholder hamper
+    };
+
+    setRewards(prev => {
+      const updated = [...prev, newReward];
+      localStorage.setItem('freshvita_rewards', JSON.stringify(updated));
+      return updated;
+    });
+    notify('Reward Added', `${title} is now available in the rewards store.`, 'system');
+  };
+
+  const handleResetVoucherTemplates = () => {
+    if (window.confirm('Reset gift vouchers to standard templates?')) {
+      setVoucherTemplates(VOUCHER_TEMPLATES);
+      localStorage.removeItem('freshvita_voucher_templates');
+      notify('Vouchers Reset', 'Standard gift voucher tiers restored.', 'system');
+    }
+  };
+
+  const handleClearAllVoucherTemplates = () => {
+    if (window.confirm('Remove all gift voucher buy options?')) {
+      setVoucherTemplates([]);
+      localStorage.setItem('freshvita_voucher_templates', JSON.stringify([]));
+      notify('Vouchers Wiped', 'All gift card options removed.', 'system');
+    }
+  };
+
+  const handleAddVoucherTemplate = () => {
+    const label = window.prompt('Voucher Name (e.g. Platinum Gift):');
+    if (!label) return;
+    const amount = parseInt(window.prompt('Voucher Value (Rs):') || '0');
+    const price = parseInt(window.prompt('Selling Price (Rs):') || '0');
+
+    const newVoucher = { amount, price, label };
+    
+    setVoucherTemplates(prev => {
+      const updated = [...prev, newVoucher];
+      localStorage.setItem('freshvita_voucher_templates', JSON.stringify(updated));
+      return updated;
+    });
+    notify('Voucher Added', `New ${label} tier created.`, 'system');
+  };
+
+  const handleClearAllFruits = () => {
+    if (window.confirm('WARNING: This will delete ALL fruits from the menu. Are you sure?')) {
+      setFruits([]);
+      localStorage.setItem('freshvita_fruits', JSON.stringify([]));
+      notify('Menu Wiped', 'All fruits have been removed. You can now add new ones.', 'system');
+    }
+  };
+
+  const handleAddFruit = () => {
+    const name = window.prompt('Fruit Name:');
+    if (!name) return;
+    const price = parseInt(window.prompt('Price (Rs):') || '0');
+    const unit = window.prompt('Unit (e.g. kg, piece):') || 'kg';
+    const type = (window.prompt('Category (tropical, berry, citrus, stone, melon, other):') || 'other') as Fruit['type'];
+    const description = window.prompt('Description:') || '';
+
+    const newFruit: Fruit = {
+      id: `fruit-${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      price,
+      unit,
+      type,
+      description,
+      image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?w=800&fit=crop', // Placeholder
+      nutrition: {
+        calories: 100,
+        vitamins: [{ name: 'Vitamin C', value: 'High' }],
+        minerals: [{ name: 'Potassium', value: 'Moderate' }],
+        benefits: ['Fresh and Healthy']
+      }
+    };
+
+    setFruits(prev => {
+      const updated = [...prev, newFruit];
+      localStorage.setItem('freshvita_fruits', JSON.stringify(updated));
+      return updated;
+    });
+    notify('Fruit Added', `${name} has been added to the menu. Click the camera icon to set its image.`, 'system');
   };
 
   const addToCart = (item: Fruit | FitnessPlan | CheckupPackage, directBuy = false) => {
@@ -4649,6 +4841,8 @@ export default function App() {
           fruits={filteredFruits} 
           onImageUpload={handleImageUpload} 
           onReset={handleImageReset}
+          onClearAll={handleClearAllFruits}
+          onAddFruit={handleAddFruit}
           onAddToCart={addToCart}
           reviews={reviews}
           onRate={(id, name) => {
@@ -4661,7 +4855,14 @@ export default function App() {
           recommendedFruits={recommendedFruits}
           onViewNutrition={setSelectedFruitNutrition}
         />
-        <GiftVoucherSection onBuy={handleBuyVoucher} />
+        <GiftVoucherSection 
+          templates={voucherTemplates}
+          onBuy={handleBuyVoucher} 
+          onReset={handleResetVoucherTemplates}
+          onClearAll={handleClearAllVoucherTemplates}
+          onAdd={handleAddVoucherTemplate}
+          user={currentUser}
+        />
         <FitnessSection onAddToCart={addToCart} />
         <CheckupsSection 
           onAddToCart={addToCart}
@@ -4680,6 +4881,9 @@ export default function App() {
           points={userPoints} 
           onRedeem={handleRedeemReward}
           onImageUpload={handleRewardImageUpload}
+          onReset={handleResetRewards}
+          onClearAll={handleClearAllRewards}
+          onAdd={handleAddReward}
           user={currentUser}
         />
         <ActivitySection 
