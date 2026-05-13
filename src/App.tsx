@@ -52,6 +52,20 @@ import {
   InfoWindow
 } from '@vis.gl/react-google-maps';
 
+import { db, auth } from './firebase';
+import { 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  updateProfile,
+  onAuthStateChanged,
+  GoogleAuthProvider,
+  signInWithPopup,
+  signOut,
+  RecaptchaVerifier,
+  signInWithPhoneNumber,
+  ConfirmationResult
+} from 'firebase/auth';
+
 // --- Types & Data ---
 
 interface User {
@@ -339,16 +353,96 @@ const DeliveryTrackingMap = ({ customerLocation, riderLocation }: {
   );
 };
 
-const AuthModal = ({ isOpen, onClose, onSignInAsOwner }: { 
+const AuthModal = ({ isOpen, onClose }: { 
   isOpen: boolean, 
   onClose: () => void,
-  onSignInAsOwner: () => void
 }) => {
+  const [mode, setMode] = useState<'signin' | 'signup' | 'phone'>('signin');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [verificationCode, setVerificationCode] = useState('');
+  const [confirmationResult, setConfirmationResult] = useState<ConfirmationResult | null>(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleEmailAuth = async (e: FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      if (mode === 'signup') {
+        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+        await updateProfile(userCredential.user, { displayName: name });
+      } else {
+        await signInWithEmailAndPassword(auth, email, password);
+      }
+      onClose();
+    } catch (err: any) {
+      setError(err.message || 'Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const setupRecaptcha = () => {
+    if ((window as any).recaptchaVerifier) return;
+    (window as any).recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+      'size': 'invisible',
+      'callback': (response: any) => {
+        console.log('Recaptcha resolved');
+      }
+    });
+  };
+
+  const handlePhoneSignIn = async (e: FormEvent) => {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+    try {
+      setupRecaptcha();
+      const appVerifier = (window as any).recaptchaVerifier;
+      const result = await signInWithPhoneNumber(auth, phone, appVerifier);
+      setConfirmationResult(result);
+      setError('Verification code sent to your phone');
+    } catch (err: any) {
+      setError(err.message || 'Phone sign-in failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyCode = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!confirmationResult) return;
+    setError('');
+    setLoading(true);
+    try {
+      await confirmationResult.confirm(verificationCode);
+      onClose();
+    } catch (err: any) {
+      setError('Invalid verification code');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      await signInWithPopup(auth, provider);
+      onClose();
+    } catch (err: any) {
+      setError('Google Sign-In failed');
+    }
+  };
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 text-gray-900">
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 text-gray-900">
         <motion.div 
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -360,40 +454,162 @@ const AuthModal = ({ isOpen, onClose, onSignInAsOwner }: {
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="bg-white w-full max-w-sm rounded-[40px] overflow-hidden relative z-10 shadow-2xl"
+          className="bg-white w-full max-w-sm rounded-[40px] overflow-hidden relative z-10 shadow-2xl flex flex-col max-h-[90vh]"
         >
-          <div className="p-8 border-b border-gray-100 flex justify-between items-center">
+          <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
             <div>
               <h3 className="text-2xl font-black italic tracking-tighter">
-                Welcome to FreshVita
+                {mode === 'signin' ? 'Welcome Back' : mode === 'signup' ? 'Join FreshVita' : 'Phone Sign In'}
               </h3>
               <p className="text-[10px] font-black uppercase tracking-widest text-green-600">
-                Your health journey starts here
+                {mode === 'signin' ? 'Sign in to your account' : mode === 'signup' ? 'Create a wellness journey' : 'Access via mobile'}
               </p>
             </div>
-            <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
+            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-xl transition-all">
               <X size={24} className="text-gray-400" />
             </button>
           </div>
 
-          <div className="p-8 space-y-6">
-            <p className="text-sm text-gray-500 leading-relaxed text-center">
-              Click below to enter <strong>Owner Mode</strong> and manage your catalog images.
-            </p>
+          <div className="p-8 space-y-6 overflow-y-auto">
+            {error && (
+              <div className={`p-4 rounded-2xl text-xs font-bold ${error.includes('sent') ? 'bg-blue-50 text-blue-600' : 'bg-red-50 text-red-600'}`}>
+                {error}
+              </div>
+            )}
 
-            <button 
-              onClick={() => {
-                onClose();
-                onSignInAsOwner();
-              }}
-              className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-black uppercase tracking-widest shadow-xl hover:bg-green-600 transition-all active:scale-95 flex items-center justify-center gap-4"
-            >
-              Sign In as Owner
-            </button>
+            {mode !== 'phone' ? (
+              <form onSubmit={handleEmailAuth} className="space-y-4">
+                {mode === 'signup' && (
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Full Name</label>
+                    <input 
+                      type="text" 
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Your Name"
+                      className="w-full px-6 py-4 bg-gray-100 rounded-[24px] focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-gray-300 font-medium"
+                    />
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Email Address</label>
+                  <input 
+                    type="email" 
+                    required
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="name@email.com"
+                    className="w-full px-6 py-4 bg-gray-100 rounded-[24px] focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-gray-300 font-medium"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Password</label>
+                  <input 
+                    type="password" 
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full px-6 py-4 bg-gray-100 rounded-[24px] focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-gray-300 font-medium"
+                  />
+                </div>
+                <button 
+                  disabled={loading}
+                  className="w-full py-5 bg-green-600 text-white rounded-[32px] font-black uppercase tracking-widest shadow-xl shadow-green-100 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50"
+                >
+                  {loading ? 'Processing...' : mode === 'signin' ? 'Sign In' : 'Sign Up'}
+                </button>
+              </form>
+            ) : (
+              <div className="space-y-4">
+                {!confirmationResult ? (
+                  <form onSubmit={handlePhoneSignIn} className="space-y-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Phone Number</label>
+                      <input 
+                        type="tel" 
+                        required
+                        value={phone}
+                        onChange={(e) => setPhone(e.target.value)}
+                        placeholder="+977 98XXXXXXXX"
+                        className="w-full px-6 py-4 bg-gray-100 rounded-[24px] focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-gray-300 font-medium"
+                      />
+                    </div>
+                    <div id="recaptcha-container"></div>
+                    <button 
+                      disabled={loading}
+                      className="w-full py-5 bg-green-600 text-white rounded-[32px] font-black uppercase tracking-widest shadow-xl shadow-green-100 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {loading ? 'Sending...' : 'Send OTP'}
+                    </button>
+                  </form>
+                ) : (
+                  <form onSubmit={handleVerifyCode} className="space-y-4">
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">One-Time Password</label>
+                      <input 
+                        type="text" 
+                        required
+                        value={verificationCode}
+                        onChange={(e) => setVerificationCode(e.target.value)}
+                        placeholder="123456"
+                        className="w-full px-6 py-4 bg-gray-100 rounded-[24px] focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-gray-300 font-medium text-center tracking-[1em] text-lg"
+                      />
+                    </div>
+                    <button 
+                      disabled={loading}
+                      className="w-full py-5 bg-green-600 text-white rounded-[32px] font-black uppercase tracking-widest shadow-xl shadow-green-100 hover:bg-green-700 transition-all active:scale-95 disabled:opacity-50"
+                    >
+                      {loading ? 'Verifying...' : 'Verify & Sign In'}
+                    </button>
+                    <button 
+                      type="button"
+                      onClick={() => setConfirmationResult(null)}
+                      className="w-full text-[10px] font-black uppercase tracking-widest text-gray-400 py-2"
+                    >
+                      Use a different number
+                    </button>
+                  </form>
+                )}
+              </div>
+            )}
 
-            <p className="text-[9px] text-center text-gray-400 font-bold uppercase tracking-[0.2em] px-4">
-              Local Mode Enabled
-            </p>
+            <div className="relative py-4">
+              <div className="absolute inset-0 flex items-center"><div className="w-full border-t border-gray-100" /></div>
+              <div className="relative flex justify-center text-xs"><span className="px-4 bg-white text-gray-400 font-bold uppercase tracking-widest">or</span></div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button 
+                onClick={handleGoogleSignIn}
+                className="p-4 bg-gray-50 hover:bg-gray-100 rounded-3xl transition-all flex items-center justify-center group"
+              >
+                <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">
+                  <svg className="w-4 h-4" viewBox="0 0 24 24">
+                    <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z" />
+                    <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
+                  </svg>
+                </div>
+              </button>
+              <button 
+                onClick={() => setMode(mode === 'phone' ? 'signin' : 'phone')}
+                className="p-4 bg-gray-50 hover:bg-gray-100 rounded-3xl transition-all flex items-center justify-center group"
+              >
+                <Phone size={20} className="text-gray-400 group-hover:text-green-600 transition-colors" />
+              </button>
+            </div>
+
+            <div className="text-center pt-4">
+              <button 
+                onClick={() => setMode(mode === 'signup' ? 'signin' : 'signup')}
+                className="text-[10px] font-black uppercase tracking-widest text-green-600 hover:text-green-700"
+              >
+                {mode === 'signup' ? 'Already have an account? Sign In' : 'New to FreshVita? Create Account'}
+              </button>
+            </div>
           </div>
         </motion.div>
       </div>
@@ -401,12 +617,13 @@ const AuthModal = ({ isOpen, onClose, onSignInAsOwner }: {
   );
 };
 
-const Navbar = ({ onOpenCart, cartCount, points, user, onSignIn }: { 
+const Navbar = ({ onOpenCart, cartCount, points, user, onSignIn, onSignOut }: { 
   onOpenCart: () => void, 
   cartCount: number, 
   points: number,
   user: User | null,
-  onSignIn: () => void
+  onSignIn: () => void,
+  onSignOut: () => void
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -478,13 +695,18 @@ const Navbar = ({ onOpenCart, cartCount, points, user, onSignIn }: {
           </button>
 
           {user ? (
-            <div className="flex items-center gap-3 bg-gray-50 p-1 pr-4 rounded-full border border-gray-100 group">
-              <div className="relative">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-3 bg-gray-50 p-1 pr-4 rounded-full border border-gray-100 group">
                 <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full shadow-sm" />
-              </div>
-              <div className="flex flex-col">
                 <span className="text-[10px] font-black tracking-tight">{user.name}</span>
               </div>
+              <button 
+                onClick={onSignOut}
+                className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all active:scale-95"
+                title="Sign Out"
+              >
+                <Download size={20} className="rotate-180" />
+              </button>
             </div>
           ) : (
             <button 
@@ -536,11 +758,23 @@ const Navbar = ({ onOpenCart, cartCount, points, user, onSignIn }: {
               ))}
               
               {user ? (
-                <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl">
-                  <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full shadow-md" />
-                  <div>
-                    <p className="text-sm font-bold text-gray-900">{user.name}</p>
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-4 bg-gray-50 p-4 rounded-2xl">
+                    <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full shadow-md" />
+                    <div>
+                      <p className="text-sm font-bold text-gray-900">{user.name}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider">{user.email}</p>
+                    </div>
                   </div>
+                  <button 
+                    onClick={() => {
+                      setIsOpen(false);
+                      onSignOut();
+                    }}
+                    className="w-full py-4 bg-red-50 text-red-600 rounded-2xl font-black uppercase tracking-widest text-xs"
+                  >
+                    Logout
+                  </button>
                 </div>
               ) : (
                 <button 
@@ -2635,6 +2869,23 @@ export default function App() {
 
   const cartCount = cart.reduce((acc, curr) => acc + curr.quantity, 0);
 
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser) {
+        setCurrentUser({
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || (firebaseUser.phoneNumber ? `User ${firebaseUser.phoneNumber}` : 'Member'),
+          email: firebaseUser.email || '',
+          points: 100, // Default starting points
+          avatar: firebaseUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${firebaseUser.uid}`
+        });
+      } else {
+        setCurrentUser(null);
+      }
+    });
+    return unsub;
+  }, []);
+
   const addActivity = (activity: Omit<UserActivity, 'id' | 'date'>) => {
     const activityData = {
       ...activity,
@@ -2688,15 +2939,12 @@ export default function App() {
     });
   };
 
-  const handleSignInAsOwner = () => {
-    setCurrentUser({
-      id: 'owner',
-      name: 'Owner (FreshVita)',
-      email: OWNER_EMAIL,
-      points: 99999,
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=owner'
-    });
-    setUserPoints(99999);
+  const handleSignOut = async () => {
+    try {
+      await signOut(auth);
+    } catch (error) {
+      console.error("Sign out error:", error);
+    }
   };
 
   const handleRedeemReward = (reward: Reward) => {
@@ -2806,11 +3054,11 @@ export default function App() {
         points={userPoints} 
         user={currentUser}
         onSignIn={() => setIsAuthModalOpen(true)}
+        onSignOut={handleSignOut}
       />
       <AuthModal 
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
-        onSignInAsOwner={handleSignInAsOwner}
       />
 
       <main>
