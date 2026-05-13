@@ -1017,7 +1017,7 @@ const FruitSection = ({
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   
                   {isOwner && (
-                    <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
                       <label className="p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110">
                         <Camera size={18} className="text-gray-600" />
                         <input 
@@ -2150,7 +2150,7 @@ const RewardsSection = ({
                 
                 {/* Image Upload Trigger - Owner Only */}
                 {isOwner && (
-                  <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div className="absolute bottom-4 right-4 flex gap-2 z-20">
                     <label className="bg-white/90 hover:bg-white p-2.5 rounded-xl border border-gray-100 cursor-pointer shadow-lg transform hover:scale-110 transition-all">
                       <Camera size={16} className="text-gray-600" />
                       <input 
@@ -2778,6 +2778,30 @@ const EditItemModal = ({
         </div>
 
         <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+          {/* Image Preview & Upload */}
+          <div className="flex flex-col items-center gap-4 p-6 bg-gray-50 rounded-[32px] border border-gray-100 mb-4">
+            <div className="w-32 h-32 rounded-[24px] overflow-hidden shadow-lg border-4 border-white relative group">
+              <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
+              <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                <Camera size={24} className="text-white" />
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onload = (re) => setFormData({ ...formData, image: re.target?.result as string });
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </label>
+            </div>
+            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Click image to change</p>
+          </div>
+
           <div>
             <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Name / Title</label>
             <input 
