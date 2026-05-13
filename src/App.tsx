@@ -52,64 +52,7 @@ import {
   InfoWindow
 } from '@vis.gl/react-google-maps';
 
-import { 
-  onAuthStateChanged, 
-  signInWithPopup, 
-  GoogleAuthProvider, 
-  signOut,
-} from 'firebase/auth';
-import { 
-  collection, 
-  doc, 
-  setDoc, 
-  getDoc, 
-  onSnapshot, 
-  query, 
-  orderBy, 
-  addDoc, 
-  updateDoc,
-  deleteDoc,
-  writeBatch
-} from 'firebase/firestore';
-import { auth, db } from './lib/firebase';
-
 // --- Types & Data ---
-
-enum OperationType {
-  CREATE = 'create',
-  UPDATE = 'update',
-  DELETE = 'delete',
-  LIST = 'list',
-  GET = 'get',
-  WRITE = 'write',
-}
-
-interface FirestoreErrorInfo {
-  error: string;
-  operationType: OperationType;
-  path: string | null;
-  authInfo: {
-    userId?: string | null;
-    email?: string | null;
-    emailVerified?: boolean | null;
-    isAnonymous?: boolean | null;
-  }
-}
-
-function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
-  const errInfo: FirestoreErrorInfo = {
-    error: error instanceof Error ? error.message : String(error),
-    authInfo: {
-      userId: auth.currentUser?.uid,
-      email: auth.currentUser?.email,
-      emailVerified: auth.currentUser?.emailVerified,
-      isAnonymous: auth.currentUser?.isAnonymous,
-    },
-    operationType,
-    path
-  }
-  console.error('Firestore Error: ', JSON.stringify(errInfo));
-}
 
 interface User {
   id: string;
@@ -397,25 +340,7 @@ const DeliveryTrackingMap = ({ customerLocation, riderLocation }: {
 };
 
 const AuthModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
   if (!isOpen) return null;
-
-  const handleGoogleLogin = async () => {
-    setLoading(true);
-    setError(null);
-    try {
-      const provider = new GoogleAuthProvider();
-      await signInWithPopup(auth, provider);
-      onClose();
-    } catch (err: any) {
-      setError(err.message);
-      handleFirestoreError(err, OperationType.GET, 'auth');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <AnimatePresence>
@@ -448,27 +373,19 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }
           </div>
 
           <div className="p-8 space-y-6">
-            {error && (
-              <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-xs font-bold border border-red-100">
-                {error}
-              </div>
-            )}
-            
             <p className="text-sm text-gray-500 leading-relaxed text-center">
-              Sign in with Google to sync your points, track your health reports, and access exclusive rewards.
+              Login is currently disabled. You can still browse our fresh fruits and health packages locally!
             </p>
 
             <button 
-              onClick={handleGoogleLogin}
-              disabled={loading}
-              className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-black uppercase tracking-widest shadow-xl hover:bg-green-600 transition-all active:scale-95 flex items-center justify-center gap-4 disabled:opacity-50"
+              onClick={onClose}
+              className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-black uppercase tracking-widest shadow-xl hover:bg-green-600 transition-all active:scale-95 flex items-center justify-center gap-4"
             >
-              <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
-              {loading ? 'Signing in...' : 'Sign in with Google'}
+              Continue Browsing
             </button>
 
             <p className="text-[9px] text-center text-gray-400 font-bold uppercase tracking-[0.2em] px-4">
-              By signing in, you agree to our terms of service and privacy policy.
+              Local Mode Enabled
             </p>
           </div>
         </motion.div>
@@ -477,13 +394,12 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }
   );
 };
 
-const Navbar = ({ onOpenCart, cartCount, points, user, onSignIn, onSignOut }: { 
+const Navbar = ({ onOpenCart, cartCount, points, user, onSignIn }: { 
   onOpenCart: () => void, 
   cartCount: number, 
   points: number,
   user: User | null,
-  onSignIn: () => void,
-  onSignOut: () => void
+  onSignIn: () => void
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -558,20 +474,9 @@ const Navbar = ({ onOpenCart, cartCount, points, user, onSignIn, onSignOut }: {
             <div className="flex items-center gap-3 bg-gray-50 p-1 pr-4 rounded-full border border-gray-100 group">
               <div className="relative">
                 <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full shadow-sm" />
-                {user.email === 'kopitebbr@gmail.com' && (
-                  <div className="absolute -top-1 -right-1 bg-green-600 w-3 h-3 rounded-full border-2 border-white flex items-center justify-center">
-                    <Check size={6} className="text-white" />
-                  </div>
-                )}
               </div>
               <div className="flex flex-col">
-                <div className="flex items-center gap-1">
-                  <span className="text-[10px] font-black tracking-tight">{user.name}</span>
-                  {user.email === 'kopitebbr@gmail.com' && (
-                    <span className="text-[7px] bg-green-100 text-green-700 px-1 rounded-sm font-black uppercase">Owner</span>
-                  )}
-                </div>
-                <button onClick={onSignOut} className="text-[8px] font-black uppercase text-red-500 hover:text-red-600 transition-colors text-left">Logout</button>
+                <span className="text-[10px] font-black tracking-tight">{user.name}</span>
               </div>
             </div>
           ) : (
@@ -949,9 +854,7 @@ const FruitSection = ({
   onAddToCart,
   reviews,
   onRate,
-  user,
-  onEdit,
-  onAdd
+  user
 }: { 
   fruits: Fruit[], 
   onImageUpload: (id: string, file: File) => void, 
@@ -959,12 +862,8 @@ const FruitSection = ({
   onAddToCart: (fruit: Fruit, direct?: boolean) => void,
   reviews: Review[],
   onRate: (id: string, name: string) => void,
-  user: User | null,
-  onEdit: (fruit: Fruit) => void,
-  onAdd: () => void
+  user: User | null
 }) => {
-  const isOwner = user?.email === 'kopitebbr@gmail.com';
-  
   return (
     <section id="fruits" className="py-24 bg-white overflow-hidden scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">
@@ -976,22 +875,6 @@ const FruitSection = ({
             subtitle="Straight from Nepal's best orchards. No preservatives, no cold storage, just pure nature."
             centered={false}
           />
-          {isOwner && (
-            <div className="flex gap-3">
-              <button 
-                onClick={onAdd}
-                className="px-6 py-4 bg-gray-900 text-white rounded-[24px] text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-green-600 transition-all shadow-xl active:scale-95"
-              >
-                <Plus size={16} /> Add Fruit
-              </button>
-              <button 
-                onClick={onReset}
-                className="px-6 py-4 bg-gray-50 text-gray-400 border border-gray-100 rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center gap-2 active:scale-95"
-              >
-                <RefreshCcw size={16} /> Revert to default images
-              </button>
-            </div>
-          )}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
@@ -1016,29 +899,6 @@ const FruitSection = ({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   
-                  {isOwner && (
-                    <div className="absolute top-3 right-3 flex flex-col gap-2 z-20">
-                      <label className="p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110">
-                        <Camera size={18} className="text-gray-600" />
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          className="hidden" 
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) onImageUpload(fruit.id, file);
-                          }}
-                        />
-                      </label>
-                      <button 
-                        onClick={() => onEdit(fruit)}
-                        className="p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 hover:bg-white transition-all transform hover:scale-110"
-                      >
-                        <Edit2 size={18} className="text-blue-600" />
-                      </button>
-                    </div>
-                  )}
-
                   <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-2xl shadow-sm flex items-center gap-1.5 border border-gray-100">
                     <Star size={12} className="fill-orange-400 text-orange-400" />
                     <span className="text-[10px] font-black">{avgRating > 0 ? avgRating.toFixed(1) : 'New'}</span>
@@ -1084,7 +944,6 @@ const CartSidebar = ({
   onZoneChange,
   onClearCart,
   paymentQR,
-  onQRUpload,
   onAddActivity,
   user,
   autoCheckout = false
@@ -1097,7 +956,6 @@ const CartSidebar = ({
   onZoneChange: (id: string) => void,
   onClearCart: () => void,
   paymentQR: string,
-  onQRUpload: (file: File) => void,
   onAddActivity: (activity: Omit<UserActivity, 'id' | 'date'>) => void,
   user: User | null,
   autoCheckout?: boolean
@@ -1106,8 +964,6 @@ const CartSidebar = ({
   const [isOrdered, setIsOrdered] = useState(false);
   const [showTracking, setShowTracking] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
-
-  const isOwner = user?.email === 'kopitebbr@gmail.com';
 
   // Simulated Locations (Kathmandu)
   const [customerLocation] = useState({ lat: 27.7120, lng: 85.3131 });
@@ -1548,43 +1404,24 @@ const CartSidebar = ({
                 </div>
               </div>
 
-              {selectedPaymentMethod !== 'cod' && (
-                <div className="space-y-4">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Scan to Pay</label>
-                  <div className="relative group/qr bg-gray-50 rounded-[40px] p-8 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center overflow-hidden">
-                    {paymentQR ? (
-                      <div className="space-y-4 w-full">
-                        <img src={paymentQR} alt="QR Code" className="w-full max-h-[200px] object-contain rounded-2xl mx-auto shadow-xl" />
-                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Company QR: Scan via App</p>
+                  {selectedPaymentMethod !== 'cod' && (
+                    <div className="space-y-4">
+                      <label className="text-[10px] font-black uppercase tracking-[0.2em] text-gray-400 mb-2 block">Scan to Pay</label>
+                      <div className="bg-gray-50 rounded-[40px] p-8 border-2 border-dashed border-gray-200 flex flex-col items-center justify-center text-center overflow-hidden">
+                        {paymentQR ? (
+                          <div className="space-y-4 w-full">
+                            <img src={paymentQR} alt="QR Code" className="w-full max-h-[200px] object-contain rounded-2xl mx-auto shadow-xl" />
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">Company QR: Scan via App</p>
+                          </div>
+                        ) : (
+                          <div className="py-8">
+                            <QrCode size={40} className="text-gray-200 mb-3 mx-auto" />
+                            <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">QR Verification Pending</p>
+                          </div>
+                        )}
                       </div>
-                    ) : (
-                      <div className="py-8">
-                        <QrCode size={40} className="text-gray-200 mb-3 mx-auto" />
-                        <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest">QR Verification Pending</p>
-                      </div>
-                    )}
-
-                    {isOwner && (
-                      <label className="absolute inset-0 cursor-pointer bg-black/0 hover:bg-black/5 flex flex-col items-center justify-center transition-all opacity-0 hover:opacity-100 backdrop-blur-[2px]">
-                        <div className="bg-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-900 border border-gray-100 scale-90 group-hover/qr:scale-100 transition-transform">
-                          <Camera size={16} className="text-green-600" /> 
-                          {paymentQR ? 'Update Company QR' : 'Upload QR Code'}
-                        </div>
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          className="hidden" 
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) onQRUpload(file);
-                          }}
-                        />
-                        <p className="mt-4 text-[9px] text-white/90 font-black uppercase tracking-tighter bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-md">Admin Only Control</p>
-                      </label>
-                    )}
-                  </div>
-                </div>
-              )}
+                    </div>
+                  )}
 
               <div className="p-6 bg-gray-900 rounded-[32px] text-white flex items-center justify-between">
                 <div>
@@ -2088,19 +1925,14 @@ const RewardsSection = ({
   points, 
   onRedeem, 
   onImageUpload,
-  user,
-  onEdit,
-  onAdd
+  user
 }: { 
   rewards: Reward[], 
   points: number, 
   onRedeem: (reward: Reward) => void,
   onImageUpload: (id: string, file: File) => void,
-  user: User | null,
-  onEdit: (reward: Reward) => void,
-  onAdd: () => void
+  user: User | null
 }) => {
-  const isOwner = user?.email === 'kopitebbr@gmail.com';
   return (
     <section id="rewards" className="py-24 bg-gray-50 overflow-hidden scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">
@@ -2113,14 +1945,6 @@ const RewardsSection = ({
             centered={false}
           />
           <div className="flex items-center gap-3">
-             {isOwner && (
-              <button 
-                onClick={onAdd}
-                className="px-6 py-4 bg-gray-900 text-white rounded-[24px] text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-green-600 transition-all shadow-xl active:scale-95"
-              >
-                <Plus size={16} /> Add Reward
-              </button>
-            )}
             <div className="p-8 bg-green-600 rounded-[40px] text-white flex items-center gap-6 shadow-2xl shadow-green-200 shrink-0">
               <div>
                 <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Your Balance</p>
@@ -2147,40 +1971,6 @@ const RewardsSection = ({
                 <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-green-600 border border-green-100">
                   {reward.type}
                 </div>
-                
-                {/* Image Upload Trigger - Owner Only */}
-                {isOwner && (
-                  <div className="absolute bottom-4 right-4 flex gap-2 z-20">
-                    <label className="bg-white/90 hover:bg-white p-2.5 rounded-xl border border-gray-100 cursor-pointer shadow-lg transform hover:scale-110 transition-all">
-                      <Camera size={16} className="text-gray-600" />
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) onImageUpload(reward.id, file);
-                        }}
-                      />
-                    </label>
-                    <button 
-                      onClick={() => onEdit(reward)}
-                      className="bg-white/90 hover:bg-white p-2.5 rounded-xl border border-gray-100 shadow-lg transform hover:scale-110 transition-all"
-                    >
-                      <Edit2 size={16} className="text-blue-600" />
-                    </button>
-                    <button 
-                      onClick={() => {
-                        if (confirm('Delete this reward?')) {
-                          deleteDoc(doc(db, 'rewards', reward.id));
-                        }
-                      }}
-                      className="bg-white/90 hover:bg-red-50 p-2.5 rounded-xl border border-gray-100 shadow-lg transform hover:scale-110 transition-all"
-                    >
-                      <Trash2 size={16} className="text-red-600" />
-                    </button>
-                  </div>
-                )}
               </div>
               <div className="p-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{reward.title}</h3>
@@ -2719,197 +2509,6 @@ const Footer = () => {
   );
 };
 
-const EditItemModal = ({ 
-  isOpen, 
-  onClose, 
-  onSave, 
-  item, 
-  type 
-}: { 
-  isOpen: boolean, 
-  onClose: () => void, 
-  onSave: (data: any) => void,
-  item?: any,
-  type: 'fruit' | 'reward'
-}) => {
-  const [formData, setFormData] = useState<any>(item || {});
-
-  useEffect(() => {
-    if (item) setFormData(item);
-    else if (type === 'fruit') {
-      setFormData({
-        id: Math.random().toString(36).substr(2, 9),
-        name: '',
-        description: '',
-        price: 0,
-        unit: 'kg',
-        type: 'tropical',
-        image: 'https://images.unsplash.com/photo-1550258114-189fa29b0008?w=800'
-      });
-    } else {
-      setFormData({
-        id: Math.random().toString(36).substr(2, 9),
-        title: '',
-        points: 0,
-        image: 'https://images.unsplash.com/photo-1543158181-e6f9f670c5b5?w=800',
-        type: 'Voucher'
-      });
-    }
-  }, [item, type, isOpen]);
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 sm:p-24 bg-black/60 backdrop-blur-md">
-      <motion.div 
-        initial={{ scale: 0.9, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        className="bg-white w-full max-w-xl rounded-[48px] p-10 shadow-2xl relative overflow-hidden"
-      >
-        <button onClick={onClose} className="absolute top-8 right-8 p-3 hover:bg-gray-100 rounded-2xl transition-colors" title="Close modal">
-          <X size={20} className="text-gray-400" />
-        </button>
-
-        <div className="mb-10">
-          <h2 className="text-3xl font-black italic tracking-tighter mb-2">
-            {item ? 'Modify' : 'Add New'} {type === 'fruit' ? 'Fruit' : 'Reward'}
-          </h2>
-          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-600">Admin Control Panel</p>
-        </div>
-
-        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
-          {/* Image Preview & Upload */}
-          <div className="flex flex-col items-center gap-4 p-6 bg-gray-50 rounded-[32px] border border-gray-100 mb-4">
-            <div className="w-32 h-32 rounded-[24px] overflow-hidden shadow-lg border-4 border-white relative group">
-              <img src={formData.image} alt="Preview" className="w-full h-full object-cover" />
-              <label className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                <Camera size={24} className="text-white" />
-                <input 
-                  type="file" 
-                  accept="image/*" 
-                  className="hidden" 
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) {
-                      const reader = new FileReader();
-                      reader.onload = (re) => setFormData({ ...formData, image: re.target?.result as string });
-                      reader.readAsDataURL(file);
-                    }
-                  }}
-                />
-              </label>
-            </div>
-            <p className="text-[9px] font-black uppercase tracking-[0.2em] text-gray-400">Click image to change</p>
-          </div>
-
-          <div>
-            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Name / Title</label>
-            <input 
-              type="text" 
-              value={type === 'fruit' ? formData.name : formData.title}
-              onChange={(e) => setFormData({ ...formData, [type === 'fruit' ? 'name' : 'title']: e.target.value })}
-              className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
-              placeholder={`Enter ${type} name`}
-            />
-          </div>
-
-          {type === 'fruit' && (
-            <>
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Description</label>
-                <textarea 
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-500/20 min-h-[100px]"
-                  placeholder="Tell us about this fruit..."
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Price (NPR)</label>
-                  <input 
-                    type="number" 
-                    value={formData.price}
-                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
-                  />
-                </div>
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Unit</label>
-                  <select 
-                    value={formData.unit}
-                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
-                  >
-                    <option value="kg">kilogram (kg)</option>
-                    <option value="dozen">dozen</option>
-                    <option value="pack">pack</option>
-                    <option value="piece">piece</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Animation Type</label>
-                <select 
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
-                >
-                  <option value="tropical">Tropical</option>
-                  <option value="berry">Berry</option>
-                  <option value="citrus">Citrus</option>
-                  <option value="stone">Stone Fruit</option>
-                  <option value="melon">Melon</option>
-                </select>
-              </div>
-            </>
-          )}
-
-          {type === 'reward' && (
-            <>
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Points Required</label>
-                <input 
-                  type="number" 
-                  value={formData.points}
-                  onChange={(e) => setFormData({ ...formData, points: Number(e.target.value) })}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
-                />
-              </div>
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Reward Type</label>
-                <select 
-                  value={formData.type}
-                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
-                >
-                  <option value="Voucher">Voucher</option>
-                  <option value="Gift Hamper">Gift Hamper</option>
-                  <option value="Service">Service</option>
-                </select>
-              </div>
-            </>
-          )}
-        </div>
-
-        <div className="mt-10 flex gap-4">
-          <button 
-            onClick={onClose}
-            className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-gray-100 transition-all"
-          >
-            Cancel
-          </button>
-          <button 
-            onClick={() => onSave(formData)}
-            className="flex-[2] py-5 bg-gray-900 text-white rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-green-600 transition-all shadow-xl shadow-gray-200"
-          >
-            Save Changes
-          </button>
-        </div>
-      </motion.div>
-    </div>
-  );
-};
 
 // --- Main App ---
 
@@ -2976,250 +2575,97 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [activities, setActivities] = useState<UserActivity[]>([]);
-  const [loading, setLoading] = useState(false);
-
-  // Admin state
-  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
-  const [adminItem, setAdminItem] = useState<any>(null);
-  const [adminType, setAdminType] = useState<'fruit' | 'reward'>('fruit');
 
   const cartCount = cart.reduce((acc, curr) => acc + curr.quantity, 0);
 
-  // 1. Auth Listener
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        // Check if user document exists, if not create it
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        try {
-          const userDoc = await getDoc(userDocRef);
-          if (!userDoc.exists()) {
-            const newUser: User = {
-              id: firebaseUser.uid,
-              name: firebaseUser.displayName || 'Anonymous',
-              email: firebaseUser.email || '',
-              points: 100, // Welcome points
-              avatar: firebaseUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${firebaseUser.uid}`
-            };
-            await setDoc(userDocRef, newUser);
-          }
-        } catch (err) {
-          handleFirestoreError(err, OperationType.GET, `users/${firebaseUser.uid}`);
-        }
-      } else {
-        setCurrentUser(null);
-        setUserPoints(0);
-        setActivities([]);
-      }
-      setLoading(false);
+  const addActivity = (activity: Omit<UserActivity, 'id' | 'date'>) => {
+    const activityData = {
+      ...activity,
+      id: Math.random().toString(36).substr(2, 9),
+      date: new Date().toLocaleDateString()
+    };
+    setActivities(prev => [activityData as UserActivity, ...prev]);
+
+    // Earn points on purchase
+    if (activity.type === 'Purchase' && activity.points > 0) {
+      setUserPoints(prev => prev + activity.points);
+    }
+  };
+
+  const handleRewardImageUpload = (id: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      setRewards(prev => prev.map(r => r.id === id ? { ...r, image: base64 } : r));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleQRUpload = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const base64 = e.target?.result as string;
+      setPaymentQR(base64);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddReview = (review: Omit<Review, 'id' | 'date'>) => {
+    const reviewData = {
+      ...review,
+      id: Math.random().toString(36).substr(2, 9),
+      date: new Date().toLocaleDateString()
+    };
+    setReviews(prev => [reviewData as Review, ...prev]);
+    setIsReviewModalOpen(false);
+    
+    addActivity({
+      type: 'Review',
+      title: `Reviewed: ${reviewItem?.name}`,
+      amount: 0,
+      points: 50 // Reward for review
     });
-    return () => unsubscribe();
-  }, []);
-
-  // 2. User Data Listener
-  useEffect(() => {
-    if (!auth.currentUser) return;
-
-    const userDocRef = doc(db, 'users', auth.currentUser.uid);
-    const unsubUser = onSnapshot(userDocRef, (doc) => {
-      if (doc.exists()) {
-        const data = doc.data() as User;
-        setCurrentUser(data);
-        setUserPoints(data.points);
-      }
-    }, (err) => handleFirestoreError(err, OperationType.GET, `users/${auth.currentUser?.uid}`));
-
-    const activitiesQuery = query(collection(db, 'users', auth.currentUser.uid, 'activities'), orderBy('date', 'desc'));
-    const unsubActivities = onSnapshot(activitiesQuery, (snapshot) => {
-      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserActivity));
-      setActivities(docs);
-    }, (err) => handleFirestoreError(err, OperationType.GET, `users/${auth.currentUser?.uid}/activities`));
-
-    return () => {
-      unsubUser();
-      unsubActivities();
-    };
-  }, [auth.currentUser]);
-
-  // 3. Global Data Listeners
-  useEffect(() => {
-    const unsubFruits = onSnapshot(collection(db, 'fruits'), (snapshot) => {
-      if (snapshot.empty && auth.currentUser?.email === 'kopitebbr@gmail.com') {
-        const batch = writeBatch(db);
-        FRUITS_DATA.forEach(f => {
-          batch.set(doc(db, 'fruits', f.id), f);
-        });
-        batch.commit();
-      } else if (!snapshot.empty) {
-        setFruits(snapshot.docs.map(doc => doc.data() as Fruit));
-      }
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'fruits'));
-
-    const unsubRewards = onSnapshot(collection(db, 'rewards'), (snapshot) => {
-      if (snapshot.empty && auth.currentUser?.email === 'kopitebbr@gmail.com') {
-        const batch = writeBatch(db);
-        REWARDS_DATA.forEach(r => {
-          batch.set(doc(db, 'rewards', r.id), r);
-        });
-        batch.commit();
-      } else if (!snapshot.empty) {
-        setRewards(snapshot.docs.map(doc => doc.data() as Reward));
-      }
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'rewards'));
-
-    const unsubReviews = onSnapshot(collection(db, 'reviews'), (snapshot) => {
-      if (!snapshot.empty) {
-        setReviews(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review)));
-      }
-    }, (err) => handleFirestoreError(err, OperationType.LIST, 'reviews'));
-
-    const unsubSettings = onSnapshot(doc(db, 'settings', 'company'), (doc) => {
-      if (doc.exists()) {
-        setPaymentQR(doc.data().paymentQR || '');
-      }
-    }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/company'));
-
-    return () => {
-      unsubFruits();
-      unsubRewards();
-      unsubReviews();
-      unsubSettings();
-    };
-  }, [auth.currentUser]);
-
-  const addActivity = async (activity: Omit<UserActivity, 'id' | 'date'>) => {
-    if (!auth.currentUser) return;
-
-    try {
-      const activityData = {
-        ...activity,
-        date: new Date().toISOString()
-      };
-      await addDoc(collection(db, 'users', auth.currentUser.uid, 'activities'), activityData);
-
-      // Earn points on purchase
-      if (activity.type === 'Purchase' && activity.points > 0) {
-        const userDocRef = doc(db, 'users', auth.currentUser.uid);
-        await updateDoc(userDocRef, {
-          points: userPoints + activity.points
-        });
-      }
-    } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, `users/${auth.currentUser.uid}/activities`);
-    }
   };
 
-  const handleRewardImageUpload = async (id: string, file: File) => {
-    if (auth.currentUser?.email !== 'kopitebbr@gmail.com') return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string;
-      try {
-        await updateDoc(doc(db, 'rewards', id), { image: base64 });
-      } catch (err) {
-        handleFirestoreError(err, OperationType.UPDATE, `rewards/${id}`);
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleQRUpload = async (file: File) => {
-    if (auth.currentUser?.email !== 'kopitebbr@gmail.com') return;
-
-    const reader = new FileReader();
-    reader.onload = async (e) => {
-      const base64 = e.target?.result as string;
-      try {
-        await setDoc(doc(db, 'settings', 'company'), { paymentQR: base64 }, { merge: true });
-      } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, 'settings/company');
-      }
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleAddReview = async (review: Omit<Review, 'id' | 'date'>) => {
-    try {
-      const reviewData = {
-        ...review,
-        date: new Date().toISOString()
-      };
-      await addDoc(collection(db, 'reviews'), reviewData);
-      setIsReviewModalOpen(false);
-      
-      addActivity({
-        type: 'Review',
-        title: `Reviewed: ${reviewItem?.name}`,
-        amount: 0,
-        points: 50 // Reward for review
-      });
-    } catch (err) {
-      handleFirestoreError(err, OperationType.CREATE, 'reviews');
-    }
-  };
-
-  const handleRedeemReward = async (reward: Reward) => {
-    if (!auth.currentUser) return;
+  const handleRedeemReward = (reward: Reward) => {
     if (userPoints < reward.points) {
       alert(`You need ${reward.points - userPoints} more points to redeem this reward!`);
       return;
     }
 
     if (window.confirm(`Redeem ${reward.title} for ${reward.points} points?`)) {
-      try {
-        await updateDoc(doc(db, 'users', auth.currentUser.uid), {
-          points: userPoints - reward.points
-        });
-        
-        // Track activity
-        await addActivity({
-          type: 'Redemption',
-          title: `Redeemed: ${reward.title}`,
-          amount: 0,
-          points: reward.points
-        });
+      setUserPoints(prev => prev - reward.points);
+      
+      // Track activity
+      addActivity({
+        type: 'Redemption',
+        title: `Redeemed: ${reward.title}`,
+        amount: 0,
+        points: reward.points
+      });
 
-        confetti({
-          particleCount: 150,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#FFD700', '#FFA500', '#FFFFFF']
-        });
-        alert(`Success! You have redeemed ${reward.title}. Our team will contact you shortly.`);
-      } catch (err) {
-        handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);
-      }
+      confetti({
+        particleCount: 150,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#FFD700', '#FFA500', '#FFFFFF']
+      });
+      alert(`Success! You have redeemed ${reward.title}. Our team will contact you shortly.`);
     }
   };
 
-  const handleImageUpload = async (id: string, file: File) => {
-    if (auth.currentUser?.email !== 'kopitebbr@gmail.com') return;
-
+  const handleImageUpload = (id: string, file: File) => {
     const reader = new FileReader();
-    reader.onload = async (e) => {
+    reader.onload = (e) => {
       const base64 = e.target?.result as string;
-      try {
-        await updateDoc(doc(db, 'fruits', id), { image: base64 });
-      } catch (err) {
-        handleFirestoreError(err, OperationType.UPDATE, `fruits/${id}`);
-      }
+      setFruits(prev => prev.map(f => f.id === id ? { ...f, image: base64 } : f));
     };
     reader.readAsDataURL(file);
   };
 
-  const handleImageReset = async () => {
-    if (auth.currentUser?.email !== 'kopitebbr@gmail.com') return;
+  const handleImageReset = () => {
     if (window.confirm('Revert all fruit images to farm defaults?')) {
-      try {
-        const batch = writeBatch(db);
-        FRUITS_DATA.forEach(f => {
-          batch.set(doc(db, 'fruits', f.id), f);
-        });
-        await batch.commit();
-      } catch (err) {
-        handleFirestoreError(err, OperationType.WRITE, 'fruits');
-      }
+      setFruits(FRUITS_DATA);
     }
   };
 
@@ -3275,15 +2721,6 @@ export default function App() {
     }
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
-        <div className="w-16 h-16 border-4 border-green-100 border-t-green-600 rounded-full animate-spin mb-4" />
-        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Loading FreshVita...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-green-100 selection:text-green-900 pb-16 md:pb-0">
       <Navbar 
@@ -3292,40 +2729,12 @@ export default function App() {
         points={userPoints} 
         user={currentUser}
         onSignIn={() => setIsAuthModalOpen(true)}
-        onSignOut={() => signOut(auth)}
       />
       <AuthModal 
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
       />
 
-      <AnimatePresence>
-        {isAdminModalOpen && (
-          <EditItemModal 
-            isOpen={isAdminModalOpen}
-            onClose={() => setIsAdminModalOpen(false)}
-            type={adminType}
-            item={adminItem}
-            onSave={async (data) => {
-              if (adminType === 'fruit') {
-                try {
-                  await setDoc(doc(db, 'fruits', data.id), data, { merge: true });
-                  setIsAdminModalOpen(false);
-                } catch (err) {
-                  handleFirestoreError(err, OperationType.WRITE, `fruits/${data.id}`);
-                }
-              } else {
-                try {
-                  await setDoc(doc(db, 'rewards', data.id), data, { merge: true });
-                  setIsAdminModalOpen(false);
-                } catch (err) {
-                  handleFirestoreError(err, OperationType.WRITE, `rewards/${data.id}`);
-                }
-              }
-            }}
-          />
-        )}
-      </AnimatePresence>
       <main>
         <Hero />
         <FruitSection 
@@ -3339,16 +2748,6 @@ export default function App() {
             setIsReviewModalOpen(true);
           }}
           user={currentUser}
-          onEdit={(fruit) => {
-            setAdminItem(fruit);
-            setAdminType('fruit');
-            setIsAdminModalOpen(true);
-          }}
-          onAdd={() => {
-            setAdminItem(null);
-            setAdminType('fruit');
-            setIsAdminModalOpen(true);
-          }}
         />
         <FitnessSection onAddToCart={addToCart} />
         <CheckupsSection 
@@ -3366,16 +2765,6 @@ export default function App() {
           onRedeem={handleRedeemReward}
           onImageUpload={handleRewardImageUpload}
           user={currentUser}
-          onEdit={(reward) => {
-            setAdminItem(reward);
-            setAdminType('reward');
-            setIsAdminModalOpen(true);
-          }}
-          onAdd={() => {
-            setAdminItem(null);
-            setAdminType('reward');
-            setIsAdminModalOpen(true);
-          }}
         />
         <ActivitySection 
           activities={activities} 
@@ -3433,7 +2822,6 @@ export default function App() {
               onRemove={removeFromCart}
               onClearCart={() => setCart([])}
               paymentQR={paymentQR}
-              onQRUpload={handleQRUpload}
               onAddActivity={addActivity}
               user={currentUser}
               autoCheckout={shouldAutoCheckout}
