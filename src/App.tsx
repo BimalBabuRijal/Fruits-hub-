@@ -4293,6 +4293,35 @@ export default function App() {
     const saved = localStorage.getItem('freshvita_suggestions');
     return saved ? JSON.parse(saved) : [];
   });
+
+  // Persistence Sync
+  useEffect(() => {
+    const loadPersistedData = async () => {
+      try {
+        const [fruitsRes, rewardsRes, vouchersRes] = await Promise.all([
+          fetch('/api/data/fruits'),
+          fetch('/api/data/rewards'),
+          fetch('/api/data/vouchers')
+        ]);
+
+        if (fruitsRes.ok) {
+          const data = await fruitsRes.json();
+          if (data && Array.isArray(data)) setFruits(data);
+        }
+        if (rewardsRes.ok) {
+          const data = await rewardsRes.json();
+          if (data && Array.isArray(data)) setRewards(data);
+        }
+        if (vouchersRes.ok) {
+          const data = await vouchersRes.json();
+          if (data && Array.isArray(data)) setVoucherTemplates(data);
+        }
+      } catch (error) {
+        console.error("Failed to sync with local database:", error);
+      }
+    };
+    loadPersistedData();
+  }, []);
   
   const notify = (title: string, message: string, type: AppNotification['type'] = 'system') => {
     const newNotif: AppNotification = {
@@ -4305,6 +4334,18 @@ export default function App() {
     };
     setNotifications(prev => [newNotif, ...prev].slice(0, 50));
     // Simulated sound or visual feedback could go here
+  };
+
+  const saveToServer = async (type: 'fruits' | 'rewards' | 'vouchers', data: any[]) => {
+    try {
+      await fetch(`/api/data/${type}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    } catch (error) {
+      console.error(`Failed to save ${type} to server:`, error);
+    }
   };
 
   const getCurrentTier = (pts: number): LoyaltyTier => {
@@ -4580,6 +4621,7 @@ export default function App() {
       setFruits(prev => {
         const updated = prev.map(f => f.id === id ? { ...f, image: base64 } : f);
         localStorage.setItem('freshvita_fruits', JSON.stringify(updated));
+        saveToServer('fruits', updated);
         return updated;
       });
     };
@@ -4590,6 +4632,7 @@ export default function App() {
     if (window.confirm('Revert all fruit images to farm defaults?')) {
       setFruits(FRUITS_DATA);
       localStorage.removeItem('freshvita_fruits');
+      saveToServer('fruits', FRUITS_DATA);
       notify('Cache Cleared', 'Fruits menu has been reset to defaults.', 'system');
     }
   };
@@ -4598,6 +4641,7 @@ export default function App() {
     if (window.confirm('Reset all rewards to system defaults?')) {
       setRewards(REWARDS_DATA);
       localStorage.removeItem('freshvita_rewards');
+      saveToServer('rewards', REWARDS_DATA);
       notify('Rewards Reset', 'The rewards catalog has been restored to default items.', 'system');
     }
   };
@@ -4606,6 +4650,7 @@ export default function App() {
     if (window.confirm('Wipe the rewards catalog clean? This cannot be undone.')) {
       setRewards([]);
       localStorage.setItem('freshvita_rewards', JSON.stringify([]));
+      saveToServer('rewards', []);
       notify('Catalog Wiped', 'All reward items have been removed.', 'system');
     }
   };
@@ -4627,6 +4672,7 @@ export default function App() {
     setRewards(prev => {
       const updated = [...prev, newReward];
       localStorage.setItem('freshvita_rewards', JSON.stringify(updated));
+      saveToServer('rewards', updated);
       return updated;
     });
     notify('Reward Added', `${title} is now available in the rewards store.`, 'system');
@@ -4636,6 +4682,7 @@ export default function App() {
     if (window.confirm('Reset gift vouchers to standard templates?')) {
       setVoucherTemplates(VOUCHER_TEMPLATES);
       localStorage.removeItem('freshvita_voucher_templates');
+      saveToServer('vouchers', VOUCHER_TEMPLATES);
       notify('Vouchers Reset', 'Standard gift voucher tiers restored.', 'system');
     }
   };
@@ -4644,6 +4691,7 @@ export default function App() {
     if (window.confirm('Remove all gift voucher buy options?')) {
       setVoucherTemplates([]);
       localStorage.setItem('freshvita_voucher_templates', JSON.stringify([]));
+      saveToServer('vouchers', []);
       notify('Vouchers Wiped', 'All gift card options removed.', 'system');
     }
   };
@@ -4659,6 +4707,7 @@ export default function App() {
     setVoucherTemplates(prev => {
       const updated = [...prev, newVoucher];
       localStorage.setItem('freshvita_voucher_templates', JSON.stringify(updated));
+      saveToServer('vouchers', updated);
       return updated;
     });
     notify('Voucher Added', `New ${label} tier created.`, 'system');
@@ -4668,6 +4717,7 @@ export default function App() {
     if (window.confirm('WARNING: This will delete ALL fruits from the menu. Are you sure?')) {
       setFruits([]);
       localStorage.setItem('freshvita_fruits', JSON.stringify([]));
+      saveToServer('fruits', []);
       notify('Menu Wiped', 'All fruits have been removed. You can now add new ones.', 'system');
     }
   };
@@ -4699,6 +4749,7 @@ export default function App() {
     setFruits(prev => {
       const updated = [...prev, newFruit];
       localStorage.setItem('freshvita_fruits', JSON.stringify(updated));
+      saveToServer('fruits', updated);
       return updated;
     });
     notify('Fruit Added', `${name} has been added to the menu. Click the camera icon to set its image.`, 'system');

@@ -1,0 +1,5 @@
+[
+  { "amount": 500, "price": 475, "label": "Starter Gift" },
+  { "amount": 1000, "price": 950, "label": "Value Pack" },
+  { "amount": 2500, "price": 2300, "label": "Premium Harvest" }
+]

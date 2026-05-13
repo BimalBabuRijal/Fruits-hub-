@@ -1,5 +1,6 @@
 import express from "express";
 import path from "path";
+import fs from "fs/promises";
 import { createServer as createViteServer } from "vite";
 
 const app = express();
@@ -7,7 +8,48 @@ const PORT = 3000;
 
 app.use(express.json());
 
-// API routes
+// Helper to handle data file paths
+const DATA_PATHS = {
+  fruits: path.join(process.cwd(), 'public/data/fruits.json'),
+  rewards: path.join(process.cwd(), 'public/data/rewards.json'),
+  vouchers: path.join(process.cwd(), 'public/data/vouchers.json'),
+};
+
+// API routes for data persistence
+app.get("/api/data/:type", async (req, res) => {
+  const { type } = req.params;
+  const filePath = DATA_PATHS[type as keyof typeof DATA_PATHS];
+  
+  if (!filePath) {
+    return res.status(404).json({ error: "Data type not found" });
+  }
+
+  try {
+    const data = await fs.readFile(filePath, "utf-8");
+    res.json(JSON.parse(data));
+  } catch (error) {
+    console.error(`Error reading ${type} data:`, error);
+    res.status(500).json({ error: "Failed to read data" });
+  }
+});
+
+app.post("/api/data/:type", async (req, res) => {
+  const { type } = req.params;
+  const filePath = DATA_PATHS[type as keyof typeof DATA_PATHS];
+  
+  if (!filePath) {
+    return res.status(404).json({ error: "Data type not found" });
+  }
+
+  try {
+    await fs.writeFile(filePath, JSON.stringify(req.body, null, 2), "utf-8");
+    res.json({ success: true });
+  } catch (error) {
+    console.error(`Error writing ${type} data:`, error);
+    res.status(500).json({ error: "Failed to save data" });
+  }
+});
+
 app.post("/api/notify-company", (req, res) => {
   const { type, details } = req.body;
   console.log(`[COMPANY NOTIFICATION] New ${type} received!`);

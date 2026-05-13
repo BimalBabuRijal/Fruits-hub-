@@ -1,0 +1,157 @@
+[
+  { 
+    "id": "10", 
+    "name": "Papaya (Mewaa)", 
+    "type": "tropical", 
+    "description": "Buttery texture and sweet flavor, rich in digestive enzymes.", 
+    "price": 110, 
+    "unit": "kg", 
+    "image": "https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&q=100&w=1600",
+    "nutrition": {
+      "calories": 43,
+      "vitamins": [{ "name": "Vitamin C", "value": "75%" }, { "name": "Vitamin A", "value": "10%" }],
+      "minerals": [{ "name": "Potassium", "value": "182mg" }, { "name": "Magnesium", "value": "25mg" }],
+      "fiber": "1.7g",
+      "benefits": ["Digestion Aid", "Skin Glow", "Heart Health"]
+    }
+  },
+  { 
+    "id": "18", 
+    "name": "Avocado (Ghyu Phal)", 
+    "type": "tropical", 
+    "description": "Butter-like texture and healthy fats, locally sourced from Dhankuta.", 
+    "price": 380, 
+    "unit": "kg", 
+    "image": "https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&q=100&w=1600",
+    "nutrition": {
+      "calories": 160,
+      "vitamins": [{ "name": "Vitamin K", "value": "26%" }, { "name": "Folate", "value": "20%" }],
+      "minerals": [{ "name": "Potassium", "value": "485mg" }, { "name": "Copper", "value": "9%" }],
+      "fiber": "7g",
+      "benefits": ["Healthy Fats", "Brain Health", "Weight Management"]
+    }
+  },
+  { 
+    "id": "1", 
+    "name": "Alphonso Mango", 
+    "type": "tropical", 
+    "description": "Premium export quality, extremely sweet and fiberless.", 
+    "price": 450, 
+    "unit": "kg", 
+    "image": "https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&q=100&w=1600",
+    "nutrition": {
+      "calories": 60,
+      "vitamins": [{ "name": "Vitamin C", "value": "60%" }, { "name": "Vitamin A", "value": "25%" }],
+      "minerals": [{ "name": "Potassium", "value": "168mg" }],
+      "fiber": "1.6g",
+      "benefits": ["Immunity Boost", "Eye Health", "Antioxidant Rich"]
+    }
+  },
+  { 
+    "id": "2", 
+    "name": "Strawberry (Syanja)", 
+    "type": "berry", 
+    "description": "Hydropoincally grown strawberries from Syangja.", 
+    "price": 250, 
+    "unit": "pack", 
+    "image": "https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&q=100&w=1600",
+    "nutrition": {
+      "calories": 33,
+      "vitamins": [{ "name": "Vitamin C", "value": "97%" }, { "name": "Manganese", "value": "15%" }],
+      "minerals": [{ "name": "Folate", "value": "6%" }],
+      "fiber": "2g",
+      "benefits": ["Heart Health", "Blood Sugar Control", "Cancer Prevention"]
+    }
+  },
+  { 
+    "id": "3", 
+    "name": "Watermelon (Tarbuz)", 
+    "type": "melon", 
+    "description": "Juicy summer treat from the Tarai plains.", 
+    "price": 65, 
+    "unit": "kg", 
+    "image": "https://images.unsplash.com/photo-1589927986089-35812388d1f4?auto=format&fit=crop&q=100&w=1600",
+    "nutrition": {
+      "calories": 30,
+      "vitamins": [{ "name": "Vitamin C", "value": "13%" }, { "name": "Vitamin A", "value": "11%" }],
+      "minerals": [{ "name": "Potassium", "value": "112mg" }],
+      "fiber": "0.4g",
+      "benefits": ["Hydration", "Lycopene Source", "Muscle Recovery"]
+    }
+  },
+  { 
+    "id": "4", 
+    "name": "Apple (Mustang)", 
+    "type": "stone", 
+    "description": "Authentic organic apples from Marpha, Mustang. Crispy and sweet.", 
+    "price": 260, 
+    "unit": "kg", 
+    "image": "https://images.unsplash.com/photo-1560806887-1e4cd0b6bccb?auto=format&fit=crop&q=100&w=1600",
+    "nutrition": {
+      "calories": 52,
+      "vitamins": [{ "name": "Vitamin C", "value": "7%" }],
+      "minerals": [{ "name": "Potassium", "value": "107mg" }],
+      "fiber": "2.4g",
+      "benefits": ["Digestive Health", "Heart Support", "Weight Control"]
+    }
+  },
+  { 
+    "id": "5", 
+    "name": "Orange (Suntala)", 
+    "type": "citrus", 
+    "description": "Sweet seasonal oranges from Gulmi and Syangja.", 
+    "price": 140, 
+    "unit": "kg", 
+    "image": "https://images.unsplash.com/photo-1557800636-894a64c1696f?auto=format&fit=crop&q=100&w=1600",
+    "nutrition": {
+      "calories": 47,
+      "vitamins": [{ "name": "Vitamin C", "value": "88%" }, { "name": "Folate", "value": "8%" }],
+      "minerals": [{ "name": "Potassium", "value": "181mg" }],
+      "fiber": "2.4g",
+      "benefits": ["Immunity", "Collagen Production", "Iron Absorption"]
+    }
+  },
+  { "id": "6", "name": "Pomegranate (Anar)", "type": "other", "description": "Ruby-red select Grade A pomegranates.", "price": 320, "unit": "kg", "image": "https://images.unsplash.com/photo-1541344999736-83eca272f6fc?auto=format&fit=crop&q=100&w=1600" },
+  { "id": "7", "name": "Pear (Nashpati)", "type": "stone", "description": "Crisp Asian pears from the hills of Pharping.", "price": 120, "unit": "kg", "image": "https://images.unsplash.com/photo-1514756331096-242f360fe3d5?auto=format&fit=crop&q=100&w=1600" },
+  { "id": "8", "name": "Banana (Chini Champa)", "type": "tropical", "description": "Small, sweet, and aromatic local variety.", "price": 140, "unit": "dozen", "image": "https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&q=100&w=1600" },
+  { "id": "9", "name": "Guava (Amba)", "type": "tropical", "description": "Soft pink guavas with deep tropical aroma.", "price": 95, "unit": "kg", "image": "https://images.unsplash.com/photo-1627914437299-906f0e9b9d3e?auto=format&fit=crop&q=100&w=1600" },
+  { "id": "11", "name": "Litchi", "type": "berry", "description": "Seasonal delights from Eastern Nepal.", "price": 180, "unit": "kg", "image": "https://images.unsplash.com/photo-1590005024862-6b6455bb529e?auto=format&fit=crop&q=100&w=1600" },
+  { "id": "12", "name": "Pineapple", "type": "tropical", "description": "Freshly harvested from the plains of Jhapa.", "price": 120, "unit": "piece", "image": "https://images.unsplash.com/photo-1550258114-189fa29b0008?auto=format&fit=crop&q=100&w=1600" },
+  { "id": "13", "name": "Junar (Sindhuli)", "type": "citrus", "description": "The famous sweet citrus of the Sindhuli hills.", "price": 160, "unit": "kg", "image": "https://images.unsplash.com/photo-1582979512210-99b6a53386f9?auto=format&fit=crop&q=100&w=1600" },
+  { 
+    "id": "14", 
+    "name": "Kiwi (Ilam)", 
+    "type": "tropical", 
+    "description": "Export quality green kiwis from Ilam.", 
+    "price": 420, 
+    "unit": "kg", 
+    "image": "https://images.unsplash.com/photo-1585059895324-582fc18f900b?auto=format&fit=crop&q=100&w=1600",
+    "nutrition": {
+      "calories": 61,
+      "vitamins": [{ "name": "Vitamin C", "value": "150%" }, { "name": "Vitamin K", "value": "30%" }],
+      "minerals": [{ "name": "Potassium", "value": "312mg" }],
+      "fiber": "3g",
+      "benefits": ["Eye Health", "Digestive Health", "Sleep Quality"]
+    }
+  },
+  { "id": "15", "name": "Peach (Aru)", "type": "stone", "description": "Sweet summer peaches from local orchards.", "price": 180, "unit": "kg", "image": "https://images.unsplash.com/photo-1550828521-4cb4440559b1?auto=format&fit=crop&q=100&w=1600" },
+  { "id": "16", "name": "Custard Apple", "type": "tropical", "description": "Locally grown sweet Sitafal.", "price": 280, "unit": "kg", "image": "https://images.unsplash.com/photo-1647240367355-667793d5483f?auto=format&fit=crop&q=100&w=1600" },
+  { "id": "17", "name": "Jackfruit", "type": "tropical", "description": "Rich and meaty tropical delight.", "price": 80, "unit": "kg", "image": "https://images.unsplash.com/photo-1589135084988-cb940e794356?auto=format&fit=crop&q=100&w=1600" },
+  { 
+    "id": "19", 
+    "name": "Dragon Fruit", 
+    "type": "tropical", 
+    "description": "Organic pink-fleshed dragon fruit.", 
+    "price": 450, 
+    "unit": "kg", 
+    "image": "https://images.unsplash.com/photo-1527324688101-08d3663b6044?auto=format&fit=crop&q=100&w=1600",
+    "nutrition": {
+      "calories": 60,
+      "vitamins": [{ "name": "Vitamin C", "value": "15%" }],
+      "minerals": [{ "name": "Magnesium", "value": "10%" }, { "name": "Iron", "value": "8%" }],
+      "fiber": "3g",
+      "benefits": ["Gut Health", "Iron Boost", "Blood Sugar Stabilization"]
+    }
+  },
+  { "id": "20", "name": "Grapes (Angur)", "type": "berry", "description": "Fresh, sweet, and seedless green grapes from quality vineyards.", "price": 280, "unit": "kg", "image": "https://images.unsplash.com/photo-1596364721223-3061329d81f0?auto=format&fit=crop&q=100&w=1600" }
+]
