@@ -209,22 +209,31 @@ const LOYALTY_TIERS: LoyaltyTier[] = [
 
 const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
   {
-    id: 'sub-weekly',
-    name: 'Weekly Fresh Box',
-    price: 1200,
-    frequency: 'weekly',
-    description: 'A curated mix of 5-7 seasonal fruits delivered every Monday.',
-    benefits: ['Free Delivery', 'Priority Harvesting', 'Eco-Box Included'],
+    id: 'sub-basic',
+    name: 'Basic Fresh',
+    price: 1500,
+    frequency: 'monthly',
+    description: 'Perfect for beginners. A steady supply of essential fruits delivered to your door.',
+    benefits: ['Weekly Delivery', 'Standard Fruit Box', 'Free Ring Road Delivery'],
     image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400'
   },
   {
-    id: 'sub-monthly',
-    name: 'Wellness Monthly',
+    id: 'sub-vitality',
+    name: 'Family Vitality',
     price: 4500,
     frequency: 'monthly',
-    description: 'The ultimate health package. 4 heavy crates + 1 free health checkup token.',
-    benefits: ['10% Savings', 'Free Nutritionist Call', 'All-Access Pass'],
+    description: 'Nourish your whole family with vitamins and variety. Our most popular choice.',
+    benefits: ['Twice Weekly Delivery', 'Exotic + Local Mix', '15% Savings vs Retail'],
     image: 'https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=400'
+  },
+  {
+    id: 'sub-elite',
+    name: 'Elite Wellness',
+    price: 9500,
+    frequency: 'monthly',
+    description: 'The ultimate health journey. Premium imports, superfoods, and priority care.',
+    benefits: ['VIP Selection', 'Rare Superfruits', 'Free Quarterly Health Checkup', 'Personal Wellness Coach'],
+    image: 'https://images.unsplash.com/photo-1519996529931-28324d5a630e?auto=format&fit=crop&q=80&w=400'
   }
 ];
 
@@ -1450,6 +1459,7 @@ const CartSidebar = ({
   paymentQR,
   onAddActivity,
   user,
+  onVoucherPaid,
   autoCheckout = false
 }: { 
   cart: CartItem[], 
@@ -1462,6 +1472,7 @@ const CartSidebar = ({
   paymentQR: string,
   onAddActivity: (activity: Omit<UserActivity, 'id' | 'date'>) => void,
   user: User | null,
+  onVoucherPaid: (voucher: Voucher) => void,
   autoCheckout?: boolean
 }) => {
   const [currentStep, setCurrentStep] = useState(0); // 0: Basket, 1: Delivery, 2: Payment
@@ -1585,6 +1596,34 @@ const CartSidebar = ({
     
     window.open(whatsappUrl, '_blank');
 
+    // Notify Company Email via Backend API
+    fetch('/api/notify-company', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'ORDER_PLACED',
+        details: {
+          orderNumber,
+          customer: {
+            name: formData.name,
+            phone: formData.phone,
+            email: user?.email,
+            address: formData.address,
+            zone: zoneName
+          },
+          items: cart.map(item => ({ id: item.id, name: item.name, qty: item.quantity, price: item.price })),
+          billing: {
+            subtotal,
+            serviceCharge,
+            deliveryFee,
+            total
+          },
+          payment: paymentMethodName,
+          timestamp: new Date().toISOString()
+        }
+      })
+    }).catch(err => console.error('Failed to notify company:', err));
+
     confetti({
       particleCount: 150,
       spread: 70,
@@ -1595,7 +1634,23 @@ const CartSidebar = ({
     setIsOrdered(true);
     setIsProcessingPayment(false);
     
-    // Track activity
+    // Finalize vouchers if any in cart
+    const voucherItems = cart.filter(item => item.id.startsWith('voucher-'));
+    if (voucherItems.length > 0) {
+      voucherItems.forEach(vi => {
+        const amount = (vi as any).voucherAmount || vi.price;
+        const code = (vi as any).voucherCode || 'VITA-' + Math.random().toString(36).substr(2, 6).toUpperCase();
+        const newVoucher: Voucher = {
+          id: Math.random().toString(36).substr(2, 9),
+          code,
+          amount,
+          expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
+          isUsed: false
+        };
+        onVoucherPaid(newVoucher);
+      });
+    }
+
     onAddActivity({
       type: 'Purchase',
       title: orderNumber,
@@ -2352,7 +2407,7 @@ const SubscriptionsSection = ({ onSelect }: { onSelect: (plan: SubscriptionPlan)
   );
 };
 
-const GiftVoucherSection = ({ onBuy }: { onBuy: (amount: number) => void }) => {
+const GiftVoucherSection = ({ onBuy }: { onBuy: (template: any) => void }) => {
   return (
     <section id="vouchers" className="py-24 bg-white">
       <div className="max-w-7xl mx-auto px-6">
@@ -2377,7 +2432,7 @@ const GiftVoucherSection = ({ onBuy }: { onBuy: (amount: number) => void }) => {
               {VOUCHER_TEMPLATES.map((v, i) => (
                 <button
                   key={i}
-                  onClick={() => onBuy(v.amount)}
+                  onClick={() => onBuy(v)}
                   className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-[32px] flex items-center justify-between hover:bg-white hover:border-white transition-all group/v"
                 >
                   <div className="flex items-center gap-4">
@@ -4470,23 +4525,27 @@ export default function App() {
       ...plan,
       unit: plan.frequency === 'weekly' ? 'week' : 'month',
     };
-    addToCart(subscriptionItem);
-    notify('Subscription Added', `Your ${plan.name} has been added to your cart.`, 'promo');
+    addToCart(subscriptionItem, true); // Direct buy to link to payment gateway
+    notify('Subscription Active', `Rs. ${plan.price}/${plan.frequency} ${plan.name} added. Please pay to activate.`, 'promo');
   };
 
-  const handleBuyVoucher = (amount: number) => {
+  const handleBuyVoucher = (template: { amount: number, price: number, label: string }) => {
+    // Generate code but keep it "pending" until payment
     const code = 'VITA-' + Math.random().toString(36).substr(2, 6).toUpperCase();
-    const newVoucher: Voucher = {
-      id: Math.random().toString(36).substr(2, 9),
-      code,
-      amount,
-      expiry: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString(),
-      isUsed: false
+    
+    const voucherItem: any = {
+      id: `voucher-${Date.now()}`,
+      name: `${template.label} (Rs. ${template.amount})`,
+      description: `Shareable digital code: ${code}. Valid for 30 days.`,
+      price: template.price, // User pays the discounted price
+      unit: 'Voucher',
+      image: 'https://images.unsplash.com/photo-1549463512-205abc1b79c2?auto=format&fit=crop&q=80&w=300',
+      voucherCode: code,
+      voucherAmount: template.amount // Store original value
     };
-    setVouchers(prev => [...prev, newVoucher]);
-    notify('Gift Voucher Purchased', `Your code ${code} (Rs. ${amount}) is ready to share!`, 'order');
-    // Also add to points because loyalty
-    setUserPoints(prev => prev + Math.floor(amount / 10));
+
+    addToCart(voucherItem, true);
+    notify('Voucher Added', `Rs. ${template.amount} Gift Voucher added to your cart at a special price of Rs. ${template.price}.`, 'order');
   };
 
   const currentTier = getCurrentTier(userPoints);
@@ -4628,6 +4687,10 @@ export default function App() {
               paymentQR={paymentQR}
               onAddActivity={addActivity}
               user={currentUser}
+              onVoucherPaid={(v) => {
+                setVouchers(prev => [...prev, v]);
+                notify('Gift Voucher Ready', `Rs. ${v.amount} Voucher (${v.code}) activated!`, 'loyalty');
+              }}
               autoCheckout={shouldAutoCheckout}
             />
           </>
