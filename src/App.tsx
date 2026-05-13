@@ -52,7 +52,66 @@ import {
   InfoWindow
 } from '@vis.gl/react-google-maps';
 
+import { db, auth } from './firebase';
+import { GoogleAuthProvider, signInWithPopup, onAuthStateChanged, User as FirebaseUser } from 'firebase/auth';
+import { 
+  collection, 
+  getDocs, 
+  setDoc, 
+  doc, 
+  onSnapshot, 
+  query, 
+  writeBatch
+} from 'firebase/firestore';
+
 // --- Types & Data ---
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
 
 interface User {
   id: string;
@@ -2612,19 +2671,13 @@ const handlePurchase = () => {
 };
 
 export default function App() {
-  const [fruits, setFruits] = useState<Fruit[]>(() => {
-    const saved = localStorage.getItem('freshvita_fruits');
-    return saved ? JSON.parse(saved) : FRUITS_DATA;
-  });
+  const [fruits, setFruits] = useState<Fruit[]>(FRUITS_DATA);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [shouldAutoCheckout, setShouldAutoCheckout] = useState(false);
   const [selectedZoneId, setSelectedZoneId] = useState(DELIVERY_ZONES[0].id);
   const [userPoints, setUserPoints] = useState(100);
-  const [rewards, setRewards] = useState<Reward[]>(() => {
-    const saved = localStorage.getItem('freshvita_rewards');
-    return saved ? JSON.parse(saved) : REWARDS_DATA;
-  });
+  const [rewards, setRewards] = useState<Reward[]>(REWARDS_DATA);
   const [paymentQR, setPaymentQR] = useState('');
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -2633,7 +2686,67 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [activities, setActivities] = useState<UserActivity[]>([]);
 
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (firebaseUser) => {
+      if (firebaseUser && firebaseUser.email === OWNER_EMAIL) {
+        setCurrentUser({
+          id: firebaseUser.uid,
+          name: firebaseUser.displayName || 'Owner',
+          email: firebaseUser.email!,
+          points: 99999,
+          avatar: firebaseUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${firebaseUser.uid}`
+        });
+        setUserPoints(99999);
+      } else {
+        setCurrentUser(null);
+        // Reset points if needed, or keep local points?
+        // For simplicity, we just set user to null if not owner.
+      }
+    });
+    return unsub;
+  }, []);
+
   const cartCount = cart.reduce((acc, curr) => acc + curr.quantity, 0);
+
+  // --- Firebase Sync Logic ---
+  useEffect(() => {
+    const syncCollection = async (path: string, initialData: any[], setter: (data: any[]) => void) => {
+      try {
+        const querySnapshot = await getDocs(collection(db, path));
+        if (querySnapshot.empty) {
+          // Seed initial data if empty
+          const batch = writeBatch(db);
+          initialData.forEach((item) => {
+            const docRef = doc(db, path, item.id);
+            batch.set(docRef, item);
+          });
+          await batch.commit();
+        }
+
+        // Subscribe to real-time updates
+        const q = query(collection(db, path));
+        return onSnapshot(q, (snapshot) => {
+          const items: any[] = [];
+          snapshot.forEach((doc) => {
+            items.push(doc.data() as any);
+          });
+          setter(items);
+        }, (error) => {
+          handleFirestoreError(error, OperationType.GET, path);
+        });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.GET, path);
+      }
+    };
+
+    const fruitsUnsub = syncCollection('fruits', FRUITS_DATA, setFruits);
+    const rewardsUnsub = syncCollection('rewards', REWARDS_DATA, setRewards);
+
+    return () => {
+      fruitsUnsub.then(unsub => unsub?.());
+      rewardsUnsub.then(unsub => unsub?.());
+    };
+  }, []);
 
   const addActivity = (activity: Omit<UserActivity, 'id' | 'date'>) => {
     const activityData = {
@@ -2651,13 +2764,14 @@ export default function App() {
 
   const handleRewardImageUpload = (id: string, file: File) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const base64 = e.target?.result as string;
-      setRewards(prev => {
-        const updated = prev.map(r => r.id === id ? { ...r, image: base64 } : r);
-        localStorage.setItem('freshvita_rewards', JSON.stringify(updated));
-        return updated;
-      });
+      const path = `rewards/${id}`;
+      try {
+        await setDoc(doc(db, 'rewards', id), { image: base64 }, { merge: true });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, path);
+      }
     };
     reader.readAsDataURL(file);
   };
@@ -2688,15 +2802,17 @@ export default function App() {
     });
   };
 
-  const handleSignInAsOwner = () => {
-    setCurrentUser({
-      id: 'owner',
-      name: 'Owner (FreshVita)',
-      email: OWNER_EMAIL,
-      points: 99999,
-      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=owner'
-    });
-    setUserPoints(99999);
+  const handleSignInAsOwner = async () => {
+    const provider = new GoogleAuthProvider();
+    try {
+      const result = await signInWithPopup(auth, provider);
+      if (result.user.email !== OWNER_EMAIL) {
+        alert("Access Denied: Only the verified owner can enter management mode.");
+        await auth.signOut();
+      }
+    } catch (error) {
+      console.error("Auth error:", error);
+    }
   };
 
   const handleRedeemReward = (reward: Reward) => {
@@ -2728,21 +2844,30 @@ export default function App() {
 
   const handleImageUpload = (id: string, file: File) => {
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const base64 = e.target?.result as string;
-      setFruits(prev => {
-        const updated = prev.map(f => f.id === id ? { ...f, image: base64 } : f);
-        localStorage.setItem('freshvita_fruits', JSON.stringify(updated));
-        return updated;
-      });
+      const path = `fruits/${id}`;
+      try {
+        await setDoc(doc(db, 'fruits', id), { image: base64 }, { merge: true });
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, path);
+      }
     };
     reader.readAsDataURL(file);
   };
 
-  const handleImageReset = () => {
+  const handleImageReset = async () => {
     if (window.confirm('Revert all fruit images to farm defaults?')) {
-      setFruits(FRUITS_DATA);
-      localStorage.removeItem('freshvita_fruits');
+      try {
+        const batch = writeBatch(db);
+        FRUITS_DATA.forEach((fruit) => {
+          const docRef = doc(db, 'fruits', fruit.id);
+          batch.set(docRef, fruit);
+        });
+        await batch.commit();
+      } catch (error) {
+        handleFirestoreError(error, OperationType.WRITE, 'fruits');
+      }
     }
   };
 
