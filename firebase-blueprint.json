@@ -1,36 +1,8 @@
 {
   "entities": {
-    "Fruit": {
-      "title": "Fruit",
-      "description": "Represents a fruit available in the marketplace",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "name": { "type": "string" },
-        "description": { "type": "string" },
-        "price": { "type": "number" },
-        "unit": { "type": "string" },
-        "image": { "type": "string" }
-      },
-      "required": ["id", "name", "price", "unit", "image"]
-    },
-    "Review": {
-      "title": "Review",
-      "description": "User review for an item",
-      "type": "object",
-      "properties": {
-        "id": { "type": "string" },
-        "itemId": { "type": "string" },
-        "userName": { "type": "string" },
-        "rating": { "type": "number" },
-        "comment": { "type": "string" },
-        "date": { "type": "string", "format": "date-time" }
-      },
-      "required": ["itemId", "userName", "rating", "comment", "date"]
-    },
     "User": {
-      "title": "User",
-      "description": "User profile information",
+      "title": "User Profile",
+      "description": "Public and private user data",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
@@ -42,11 +14,10 @@
       "required": ["id", "name", "email", "points"]
     },
     "UserActivity": {
-      "title": "UserActivity",
-      "description": "User activity log (purchases, redemptions, etc.)",
+      "title": "User Activity",
+      "description": "Log of purchases, redemptions, and reviews",
       "type": "object",
       "properties": {
-        "id": { "type": "string" },
         "type": { "type": "string", "enum": ["Purchase", "Redemption", "Review"] },
         "title": { "type": "string" },
         "amount": { "type": "number" },
@@ -55,9 +26,24 @@
       },
       "required": ["type", "title", "amount", "points", "date"]
     },
+    "Fruit": {
+      "title": "Fruit",
+      "description": "Fruit item available for sale",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "unit": { "type": "string" },
+        "image": { "type": "string" },
+        "type": { "type": "string", "enum": ["tropical", "berry", "citrus", "stone", "melon", "other"] }
+      },
+      "required": ["id", "name", "price", "unit", "image"]
+    },
     "Reward": {
       "title": "Reward",
-      "description": "Redeemable reward for users",
+      "description": "Loyalty reward available for redemption",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
@@ -68,9 +54,23 @@
       },
       "required": ["id", "title", "points", "image", "type"]
     },
-    "CompanySettings": {
-      "title": "CompanySettings",
-      "description": "Global settings for the company",
+    "Review": {
+      "title": "Review",
+      "description": "Customer review for a fruit or package",
+      "type": "object",
+      "properties": {
+        "itemId": { "type": "string" },
+        "itemName": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["itemId", "userName", "rating", "comment", "date"]
+    },
+    "Settings": {
+      "title": "App Settings",
+      "description": "Global application settings",
       "type": "object",
       "properties": {
         "paymentQR": { "type": "string" }
@@ -78,29 +78,29 @@
     }
   },
   "firestore": {
-    "/fruits/{fruitId}": {
-      "schema": "Fruit",
-      "description": "Collection of fruits"
-    },
-    "/reviews/{reviewId}": {
-      "schema": "Review",
-      "description": "Collection of public reviews"
-    },
-    "/rewards/{rewardId}": {
-      "schema": "Reward",
-      "description": "Collection of available rewards"
-    },
     "/users/{userId}": {
       "schema": "User",
-      "description": "User profile data"
+      "description": "User profiles"
     },
     "/users/{userId}/activities/{activityId}": {
       "schema": "UserActivity",
-      "description": "User-specific activity logs"
+      "description": "User specific activity logs"
+    },
+    "/fruits/{fruitId}": {
+      "schema": "Fruit",
+      "description": "Available fruits"
+    },
+    "/rewards/{rewardId}": {
+      "schema": "Reward",
+      "description": "Redeemable rewards"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Public customer reviews"
     },
     "/settings/company": {
-      "schema": "CompanySettings",
-      "description": "Global company settings"
+      "schema": "Settings",
+      "description": "Company global settings"
     }
   }
 }

@@ -1,114 +1,102 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 0. Global Safety Net
+    // Default deny
     match /{document=**} {
       allow read, write: if false;
     }
 
-    // Phase 3: Primitives
+    // Helper functions
     function isSignedIn() {
       return request.auth != null;
     }
-    
-    function isEmailVerified() {
-      return request.auth.token.email_verified == true;
-    }
-
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
-
     function isAdmin() {
-      // For this app, we trust the specific owner email
-      return isSignedIn() && isEmailVerified() && request.auth.token.email == 'kopitebbr@gmail.com';
+      return isSignedIn() && request.auth.token.email == 'kopitebbr@gmail.com' && request.auth.token.email_verified == true;
     }
-
     function isValidId(id) {
       return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
-    // Helper functions for entity validation
-    function isValidFruit(data) {
-      return data.keys().hasAll(['id', 'name', 'price', 'unit', 'image', 'description']) &&
-             data.id is string && data.id.size() <= 128 &&
-             data.name is string && data.name.size() <= 100 &&
-             data.price is number && data.price >= 0 &&
-             data.unit is string && data.unit.size() <= 20 &&
-             data.image is string && data.image.size() <= 1000 &&
-             data.description is string && data.description.size() <= 1000;
-    }
-
-    function isValidReview(data) {
-      return data.keys().hasAll(['itemId', 'userName', 'rating', 'comment', 'date']) &&
-             data.itemId is string && data.itemId.size() <= 128 &&
-             data.userName is string && data.userName.size() <= 100 &&
-             data.rating is number && data.rating >= 1 && data.rating <= 5 &&
-             data.comment is string && data.comment.size() <= 2000 &&
-             data.date is string; // Using string for now as app uses ISO strings
-    }
-
-    function isValidUser(data) {
-      return data.keys().hasAll(['id', 'name', 'email', 'points', 'avatar']) &&
-             data.id == request.auth.uid &&
-             data.name is string && data.name.size() <= 100 &&
-             data.email == request.auth.token.email &&
-             data.points is number &&
-             data.avatar is string && data.avatar.size() <= 1000;
-    }
-
-    function isValidActivity(data) {
-      return data.keys().hasAll(['type', 'title', 'amount', 'points', 'date']) &&
-             data.type in ['Purchase', 'Redemption', 'Review'] &&
-             data.title is string && data.title.size() <= 200 &&
-             data.amount is number &&
-             data.points is number &&
-             data.date is string;
-    }
-
-    function isValidReward(data) {
-       return data.keys().hasAll(['id', 'title', 'points', 'image', 'type']) &&
-              data.id is string && data.id.size() <= 128 &&
-              data.title is string && data.title.size() <= 100 &&
-              data.points is number && data.points >= 0 &&
-              data.image is string && data.image.size() <= 1000 &&
-              data.type in ['Gift Hamper', 'Voucher', 'Service'];
-    }
-
-    // Match blocks
-    match /fruits/{fruitId} {
-      allow get, list: if true;
-      allow write: if isAdmin() && (request.resource == null || isValidFruit(request.resource.data));
-    }
-
-    match /reviews/{reviewId} {
-      allow get, list: if true;
-      allow create: if isSignedIn() && isValidReview(request.resource.data);
-      allow update, delete: if isAdmin();
-    }
-
-    match /rewards/{rewardId} {
-      allow get, list: if true;
-      allow write: if isAdmin() && (request.resource == null || isValidReward(request.resource.data));
-    }
-
+    // Users collection
     match /users/{userId} {
-      allow get, list: if isOwner(userId) || isAdmin();
+      function isValidUser(data) {
+        return data.id == userId &&
+               data.name is string && data.name.size() <= 100 &&
+               data.email is string && data.email.size() <= 100 &&
+               data.points is number;
+      }
+      
+      allow get: if isOwner(userId) || isAdmin();
       allow create: if isOwner(userId) && isValidUser(request.resource.data);
-      allow update: if isOwner(userId) && (
-        // Only allow updating points (for redemptions) or basic info
-        request.resource.data.diff(resource.data).affectedKeys().hasAny(['points', 'name', 'avatar']) &&
-        isValidUser(request.resource.data)
-      ) || isAdmin();
+      allow update: if (isOwner(userId) || isAdmin()) && isValidUser(request.resource.data) && (
+        isAdmin() || (
+          // Users can only change points when redeeming or earning through valid actions, 
+          // but strictly we'll allow points update for now as the app handles it.
+          // In a production app, we'd use cloud functions for points.
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['points', 'name', 'avatar'])
+        )
+      );
+
+      // User activities subcollection
+      match /activities/{activityId} {
+        function isValidActivity(data) {
+          return data.type in ['Purchase', 'Redemption', 'Review'] &&
+                 data.title is string && data.title.size() <= 200 &&
+                 data.amount is number &&
+                 data.points is number &&
+                 data.date is string;
+        }
+        allow list: if isOwner(userId) || isAdmin();
+        allow create: if isOwner(userId) && isValidActivity(request.resource.data);
+      }
     }
 
-    match /users/{userId}/activities/{activityId} {
-      allow get, list: if isOwner(userId);
-      allow write: if isOwner(userId) && isValidActivity(request.resource.data);
+    // Fruits collection
+    match /fruits/{fruitId} {
+      function isValidFruit(data) {
+        return data.id is string && data.id.size() <= 50 &&
+               data.name is string && data.name.size() <= 100 &&
+               data.price is number &&
+               data.unit is string &&
+               data.image is string;
+      }
+      allow read: if true;
+      allow write: if isAdmin() && isValidFruit(request.resource.data);
     }
 
-    match /settings/{settingId} {
-      allow get, list: if true;
+    // Rewards collection
+    match /rewards/{rewardId} {
+      function isValidReward(data) {
+        return data.id is string && data.id.size() <= 50 &&
+               data.title is string && data.title.size() <= 100 &&
+               data.points is number &&
+               data.image is string &&
+               data.type in ['Gift Hamper', 'Voucher', 'Service'];
+      }
+      allow read: if true;
+      allow write: if isAdmin() && isValidReward(request.resource.data);
+    }
+
+    // Reviews collection
+    match /reviews/{reviewId} {
+      function isValidReview(data) {
+        return data.itemId is string &&
+               data.userName is string &&
+               data.rating is number && data.rating >= 1 && data.rating <= 5 &&
+               data.comment is string && data.comment.size() <= 1000 &&
+               data.date is string;
+      }
+      allow read: if true;
+      allow create: if isSignedIn() && isValidReview(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // Settings collection
+    match /settings/company {
+      allow read: if true;
       allow write: if isAdmin();
     }
   }

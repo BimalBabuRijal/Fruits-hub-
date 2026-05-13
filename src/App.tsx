@@ -57,14 +57,12 @@ import {
   signInWithPopup, 
   GoogleAuthProvider, 
   signOut,
-  User as FirebaseUser
 } from 'firebase/auth';
 import { 
   collection, 
   doc, 
   setDoc, 
   getDoc, 
-  getDocs, 
   onSnapshot, 
   query, 
   orderBy, 
@@ -111,7 +109,6 @@ function handleFirestoreError(error: unknown, operationType: OperationType, path
     path
   }
   console.error('Firestore Error: ', JSON.stringify(errInfo));
-  // In a real app, you might show a toast here
 }
 
 interface User {
@@ -631,7 +628,6 @@ const Navbar = ({ onOpenCart, cartCount, points, user, onSignIn, onSignOut }: {
                   <img src={user.avatar} alt={user.name} className="w-12 h-12 rounded-full shadow-md" />
                   <div>
                     <p className="text-sm font-bold text-gray-900">{user.name}</p>
-                    <button onClick={onSignOut} className="text-xs font-bold text-red-500">Sign Out</button>
                   </div>
                 </div>
               ) : (
@@ -2947,7 +2943,7 @@ export default function App() {
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [shouldAutoCheckout, setShouldAutoCheckout] = useState(false);
   const [selectedZoneId, setSelectedZoneId] = useState(DELIVERY_ZONES[0].id);
-  const [userPoints, setUserPoints] = useState(0);
+  const [userPoints, setUserPoints] = useState(100);
   const [rewards, setRewards] = useState<Reward[]>(REWARDS_DATA);
   const [paymentQR, setPaymentQR] = useState('');
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
@@ -2956,7 +2952,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [activities, setActivities] = useState<UserActivity[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   // Admin state
   const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
@@ -3025,7 +3021,6 @@ export default function App() {
   useEffect(() => {
     const unsubFruits = onSnapshot(collection(db, 'fruits'), (snapshot) => {
       if (snapshot.empty && auth.currentUser?.email === 'kopitebbr@gmail.com') {
-        // Seed fruits if empty and owner logged in
         const batch = writeBatch(db);
         FRUITS_DATA.forEach(f => {
           batch.set(doc(db, 'fruits', f.id), f);
@@ -3279,6 +3274,34 @@ export default function App() {
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
       />
+
+      <AnimatePresence>
+        {isAdminModalOpen && (
+          <EditItemModal 
+            isOpen={isAdminModalOpen}
+            onClose={() => setIsAdminModalOpen(false)}
+            type={adminType}
+            item={adminItem}
+            onSave={async (data) => {
+              if (adminType === 'fruit') {
+                try {
+                  await setDoc(doc(db, 'fruits', data.id), data, { merge: true });
+                  setIsAdminModalOpen(false);
+                } catch (err) {
+                  handleFirestoreError(err, OperationType.WRITE, `fruits/${data.id}`);
+                }
+              } else {
+                try {
+                  await setDoc(doc(db, 'rewards', data.id), data, { merge: true });
+                  setIsAdminModalOpen(false);
+                } catch (err) {
+                  handleFirestoreError(err, OperationType.WRITE, `rewards/${data.id}`);
+                }
+              }
+            }}
+          />
+        )}
+      </AnimatePresence>
       <main>
         <Hero />
         <FruitSection 
@@ -3363,34 +3386,6 @@ export default function App() {
         user={currentUser}
         onSignIn={() => setIsAuthModalOpen(true)}
       />
-
-      <AnimatePresence>
-        {isAdminModalOpen && (
-          <EditItemModal 
-            isOpen={isAdminModalOpen}
-            onClose={() => setIsAdminModalOpen(false)}
-            type={adminType}
-            item={adminItem}
-            onSave={async (data) => {
-              if (adminType === 'fruit') {
-                try {
-                  await setDoc(doc(db, 'fruits', data.id), data, { merge: true });
-                  setIsAdminModalOpen(false);
-                } catch (err) {
-                  handleFirestoreError(err, OperationType.WRITE, `fruits/${data.id}`);
-                }
-              } else {
-                try {
-                  await setDoc(doc(db, 'rewards', data.id), data, { merge: true });
-                  setIsAdminModalOpen(false);
-                } catch (err) {
-                  handleFirestoreError(err, OperationType.WRITE, `rewards/${data.id}`);
-                }
-              }
-            }}
-          />
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {isCartOpen && (
