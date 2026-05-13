@@ -65,8 +65,66 @@ import {
   signInWithPhoneNumber,
   ConfirmationResult
 } from 'firebase/auth';
+import { 
+  collection, 
+  getDocs, 
+  setDoc, 
+  doc, 
+  onSnapshot, 
+  query, 
+  writeBatch,
+  addDoc,
+  orderBy
+} from 'firebase/firestore';
 
 // --- Types & Data ---
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+    tenantId?: string | null;
+    providerInfo?: {
+      providerId?: string | null;
+      email?: string | null;
+    }[];
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+      tenantId: auth.currentUser?.tenantId,
+      providerInfo: auth.currentUser?.providerData?.map(provider => ({
+        providerId: provider.providerId,
+        email: provider.email,
+      })) || []
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  throw new Error(JSON.stringify(errInfo));
+}
 
 interface User {
   id: string;
@@ -129,6 +187,7 @@ interface Report {
   status: 'Normal' | 'Action Required';
   summary: string;
   date: string;
+  image?: string;
 }
 
 interface DeliveryZone {
@@ -2105,7 +2164,29 @@ const CheckupsSection = ({ onAddToCart, reviews, onRate }: {
   );
 };
 
-const ReportsSection = () => {
+const ReportsSection = ({ 
+  reports,
+  onUpload
+}: { 
+  reports: Report[],
+  onUpload: (title: string, summary: string, file: File) => void
+}) => {
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [title, setTitle] = useState('');
+  const [summary, setSummary] = useState('');
+
+  const handleUploadSubmit = (e: FormEvent) => {
+    e.preventDefault();
+    const file = fileInputRef.current?.files?.[0];
+    if (file && title && summary) {
+      onUpload(title, summary, file);
+      setIsUploadModalOpen(false);
+      setTitle('');
+      setSummary('');
+    }
+  };
+
   return (
     <section id="reports" className="py-24 bg-white text-gray-900 relative overflow-hidden border-t border-gray-100">
       <div className="max-w-7xl mx-auto px-6 relative z-10">
@@ -2146,7 +2227,7 @@ const ReportsSection = () => {
             </div>
             
             <div className="space-y-6">
-              {REPORTS_DATA.map((r, i) => (
+              {reports.map((r, i) => (
                 <motion.div 
                   key={r.id}
                   initial={{ opacity: 0, y: 10 }}
@@ -2167,15 +2248,27 @@ const ReportsSection = () => {
                     {r.summary}
                   </p>
                   <div className="flex gap-3">
-                    <button className="p-2 bg-white rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors text-gray-400"><Download size={18} /></button>
+                    {r.image && (
+                      <a href={r.image} download={`Report-${r.title}.png`} className="p-2 bg-white rounded-xl border border-gray-100 hover:bg-gray-50 transition-colors text-gray-400">
+                        <Download size={18} />
+                      </a>
+                    )}
                     <button className="flex-grow bg-green-600 py-2.5 rounded-xl text-xs font-bold text-white hover:bg-green-700 transition-all shadow-lg shadow-green-100">Details</button>
                   </div>
                 </motion.div>
               ))}
+              {reports.length === 0 && (
+                <div className="text-center py-20 bg-gray-50 rounded-[40px] border border-dashed border-gray-200">
+                  <p className="text-sm text-gray-400 font-bold uppercase tracking-widest">No reports found</p>
+                </div>
+              )}
             </div>
 
             <div className="mt-10 pt-10 border-t border-gray-100 text-center">
-              <button className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-bold text-sm w-full hover:bg-green-600 transition-all shadow-xl shadow-gray-200">
+              <button 
+                onClick={() => setIsUploadModalOpen(true)}
+                className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-bold text-sm w-full hover:bg-green-600 transition-all shadow-xl shadow-gray-200"
+              >
                 Upload Existing Report
               </button>
             </div>
@@ -2184,6 +2277,77 @@ const ReportsSection = () => {
       </div>
       <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-green-500/5 rounded-full blur-[120px] -z-0" />
       <div className="absolute bottom-0 left-0 w-[300px] h-[300px] bg-green-500/5 rounded-full blur-[100px] -z-0" />
+
+      <AnimatePresence>
+        {isUploadModalOpen && (
+          <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 text-gray-900">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setIsUploadModalOpen(false)}
+              className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="bg-white w-full max-w-md rounded-[40px] overflow-hidden relative z-10 shadow-2xl"
+            >
+              <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <div>
+                  <h3 className="text-2xl font-black italic tracking-tighter">Upload Report</h3>
+                  <p className="text-[10px] font-black uppercase tracking-widest text-green-600">Secure record keeping</p>
+                </div>
+                <button onClick={() => setIsUploadModalOpen(false)} className="p-2 hover:bg-gray-200 rounded-xl transition-all">
+                  <X size={24} className="text-gray-400" />
+                </button>
+              </div>
+
+              <form onSubmit={handleUploadSubmit} className="p-8 space-y-6">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Report Title</label>
+                  <input 
+                    type="text" 
+                    required
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    placeholder="e.g. Blood Test, Chest X-Ray"
+                    className="w-full px-6 py-4 bg-gray-100 rounded-[24px] focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-gray-300 font-medium"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Brief Summary</label>
+                  <textarea 
+                    required
+                    value={summary}
+                    onChange={(e) => setSummary(e.target.value)}
+                    placeholder="Key highlights or doctor's advice..."
+                    rows={3}
+                    className="w-full px-6 py-4 bg-gray-100 rounded-[24px] focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-gray-300 font-medium resize-none"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Report File (Image)</label>
+                  <input 
+                    type="file" 
+                    ref={fileInputRef}
+                    accept="image/*"
+                    required
+                    className="w-full px-6 py-4 bg-gray-100 rounded-[24px] focus:ring-2 focus:ring-green-500 outline-none transition-all font-medium text-xs text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:uppercase file:bg-green-600 file:text-white hover:file:bg-green-700"
+                  />
+                </div>
+                <button 
+                  type="submit"
+                  className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-black uppercase tracking-widest shadow-xl hover:bg-green-600 transition-all active:scale-95"
+                >
+                  Save to Vault
+                </button>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </section>
   );
 };
@@ -2864,6 +3028,10 @@ export default function App() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewItem, setReviewItem] = useState<{ id: string, name: string } | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [reports, setReports] = useState<Report[]>(() => {
+    const saved = localStorage.getItem('freshvita_reports');
+    return saved ? JSON.parse(saved) : REPORTS_DATA;
+  });
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [activities, setActivities] = useState<UserActivity[]>([]);
 
@@ -2879,12 +3047,63 @@ export default function App() {
           points: 100, // Default starting points
           avatar: firebaseUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${firebaseUser.uid}`
         });
+
+        // Sync reports from Firestore
+        const reportsPath = `users/${firebaseUser.uid}/reports`;
+        const q = query(collection(db, reportsPath), orderBy('date', 'desc'));
+        const reportsUnsub = onSnapshot(q, (snapshot) => {
+          const items: Report[] = [];
+          snapshot.forEach((doc) => {
+            items.push(doc.data() as Report);
+          });
+          // Merge with local seed data if needed or just replace
+          setReports(items.length > 0 ? items : REPORTS_DATA);
+        }, (error) => {
+          handleFirestoreError(error, OperationType.GET, reportsPath);
+        });
+
+        return () => reportsUnsub();
       } else {
         setCurrentUser(null);
+        // Load from local storage or defaults when logged out
+        const saved = localStorage.getItem('freshvita_reports');
+        setReports(saved ? JSON.parse(saved) : REPORTS_DATA);
       }
     });
     return unsub;
   }, []);
+
+  const handleReportUpload = (title: string, summary: string, file: File) => {
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      const reportId = Math.random().toString(36).substr(2, 9);
+      const newReport: Report = {
+        id: reportId,
+        title,
+        status: 'Normal',
+        summary,
+        date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+        image: base64
+      };
+
+      if (currentUser) {
+        const path = `users/${currentUser.id}/reports/${reportId}`;
+        try {
+          await setDoc(doc(db, 'users', currentUser.id, 'reports', reportId), newReport);
+        } catch (error) {
+          handleFirestoreError(error, OperationType.WRITE, path);
+        }
+      } else {
+        setReports(prev => {
+          const updated = [newReport, ...prev];
+          localStorage.setItem('freshvita_reports', JSON.stringify(updated));
+          return updated;
+        });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const addActivity = (activity: Omit<UserActivity, 'id' | 'date'>) => {
     const activityData = {
@@ -3084,7 +3303,10 @@ export default function App() {
             setIsReviewModalOpen(true);
           }}
         />
-        <ReportsSection />
+        <ReportsSection 
+        reports={reports}
+        onUpload={handleReportUpload}
+      />
         <RewardsSection 
           rewards={rewards} 
           points={userPoints} 
