@@ -673,7 +673,6 @@ const Navbar = ({
     { name: 'Rewards', href: '#rewards' },
     { name: 'FAQ', href: '#faq' },
     { name: 'Activity', href: '#activity' },
-    { name: 'Payment', href: '#payment' },
   ];
 
   return (
@@ -2995,7 +2994,7 @@ const DeliveryChecker = () => {
         onClick={checkDelivery}
         className="bg-green-600 text-white px-6 py-3 rounded-[18px] font-bold text-sm hover:bg-green-700 transition-all flex items-center justify-center gap-2 whitespace-nowrap shadow-lg shadow-green-200"
       >
-        {status === 'available' ? <Check size={16}/> : <Search size={16}/>}
+        {status === 'available' ? <Check size={16}/> : null}
         {status === 'available' ? 'Available' : status === 'unavailable' ? 'Coming Soon' : 'Check'}
       </button>
     </div>
@@ -3525,14 +3524,13 @@ const Hero = ({ onSearchChange, searchQuery }: { onSearchChange: (q: string) => 
           <div className="mb-12 space-y-6">
             <div className="relative max-w-lg group">
               <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 p-2 bg-white rounded-[32px] shadow-2xl shadow-green-100 border border-gray-100 focus-within:border-green-500 transition-all">
-                <div className="flex-grow flex items-center px-4 relative">
-                  <Search size={22} className="text-gray-400 mr-3" />
+                <div className="flex-grow flex items-center relative">
                   <input 
                     type="text" 
                     placeholder="Search for apples, mangoes, or vitamins..."
                     value={localSearch}
                     onChange={(e) => setLocalSearch(e.target.value)}
-                    className="w-full bg-transparent py-4 text-gray-900 font-bold placeholder:text-gray-300 outline-none pr-10"
+                    className="w-full bg-transparent py-4 pl-6 text-gray-900 font-bold placeholder:text-gray-300 outline-none pr-10"
                   />
                   {localSearch && (
                     <button 
