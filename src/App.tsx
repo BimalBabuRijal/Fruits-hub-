@@ -8,7 +8,6 @@ import {
   ShieldCheck, 
   ArrowRight,
   Menu,
-  X,
   Star,
   Activity,
   Heart,
@@ -34,7 +33,11 @@ import {
   Truck,
   Home,
   Phone,
-  ChevronLeft
+  ChevronLeft,
+  RefreshCcw,
+  Edit2,
+  Trash2,
+  X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -141,6 +144,7 @@ interface Fruit {
   price: number;
   unit: string;
   image: string;
+  type?: 'tropical' | 'berry' | 'citrus' | 'stone' | 'melon' | 'other';
 }
 
 interface CartItem extends Fruit {
@@ -219,26 +223,26 @@ const PAYMENT_METHODS: PaymentMethod[] = [
 const SERVICE_CHARGE_RATE = 0.05; // 5% service charge
 
 const FRUITS_DATA: Fruit[] = [
-  { id: '10', name: 'Papaya (Mewaa)', description: 'Buttery texture and sweet flavor, rich in digestive enzymes.', price: 110, unit: 'kg', image: 'https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&q=90&w=1200' },
-  { id: '18', name: 'Avocado (Ghyu Phal)', description: 'Butter-like texture and healthy fats, locally sourced from Dhankuta.', price: 380, unit: 'kg', image: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&q=90&w=1200' },
-  { id: '1', name: 'Alphonso Mango', description: 'Premium export quality, extremely sweet and fiberless.', price: 450, unit: 'kg', image: 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&q=90&w=1200' },
-  { id: '2', name: 'Strawberry (Syanja)', description: 'Hydropoincally grown strawberries from Syangja.', price: 250, unit: 'pack', image: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&q=90&w=1200' },
-  { id: '3', name: 'Watermelon (Tarbuz)', description: 'Juicy summer treat from the Tarai plains.', price: 65, unit: 'kg', image: 'https://images.unsplash.com/photo-1587049633562-ad78524354be?auto=format&fit=crop&q=90&w=1200' },
-  { id: '4', name: 'Apple (Mustang)', description: 'Authentic organic apples from Marpha, Mustang. Crispy and sweet.', price: 260, unit: 'kg', image: 'https://images.unsplash.com/photo-1610398616147-3cf93077af60?auto=format&fit=crop&q=90&w=1200' },
-  { id: '5', name: 'Orange (Suntala)', description: 'Sweet seasonal oranges from Gulmi and Syangja.', price: 140, unit: 'kg', image: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?auto=format&fit=crop&q=90&w=1200' },
-  { id: '6', name: 'Pomegranate (Anar)', description: 'Ruby-red select Grade A pomegranates.', price: 320, unit: 'kg', image: 'https://images.unsplash.com/photo-1541344999736-83eca272f6fc?auto=format&fit=crop&q=90&w=1200' },
-  { id: '7', name: 'Pear (Nashpati)', description: 'Crisp Asian pears from the hills of Pharping.', price: 120, unit: 'kg', image: 'https://images.unsplash.com/photo-1544256718-3bcf237f3974?auto=format&fit=crop&q=90&w=1200' },
-  { id: '8', name: 'Banana (Chini Champa)', description: 'Small, sweet, and aromatic local variety.', price: 140, unit: 'dozen', image: 'https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&q=90&w=1200' },
-  { id: '9', name: 'Guava (Amba)', description: 'Soft pink guavas with deep tropical aroma.', price: 95, unit: 'kg', image: 'https://images.unsplash.com/photo-1536592248575-531103d64510?auto=format&fit=crop&q=90&w=1200' },
-  { id: '11', name: 'Litchi', description: 'Seasonal delights from Eastern Nepal.', price: 180, unit: 'kg', image: 'https://images.unsplash.com/photo-1601275868399-45bec4f4cd9d?auto=format&fit=crop&q=90&w=1200' },
-  { id: '12', name: 'Pineapple', description: 'Freshly harvested from the plains of Jhapa.', price: 120, unit: 'piece', image: 'https://images.unsplash.com/photo-1443839097484-33e05e81f267?auto=format&fit=crop&q=90&w=1200' },
-  { id: '13', name: 'Junar (Sindhuli)', description: 'The famous sweet citrus of the Sindhuli hills.', price: 160, unit: 'kg', image: 'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?auto=format&fit=crop&q=90&w=1200' },
-  { id: '14', name: 'Kiwi (Ilam)', description: 'Export quality green kiwis from Ilam.', price: 420, unit: 'kg', image: 'https://images.unsplash.com/photo-1585059895324-582fc18f900b?auto=format&fit=crop&q=90&w=1200' },
-  { id: '15', name: 'Peach (Aru)', description: 'Sweet summer peaches from local orchards.', price: 180, unit: 'kg', image: 'https://images.unsplash.com/photo-1521236873574-884bc783451e?auto=format&fit=crop&q=90&w=1200' },
-  { id: '16', name: 'Custard Apple', description: 'Locally grown sweet Sitafal.', price: 280, unit: 'kg', image: 'https://images.unsplash.com/photo-1595111977771-ef6494371452?auto=format&fit=crop&q=90&w=1200' },
-  { id: '17', name: 'Jackfruit', description: 'Rich and meaty tropical delight.', price: 80, unit: 'kg', image: 'https://images.unsplash.com/photo-1596547609652-9cf5d8d76921?auto=format&fit=crop&q=90&w=1200' },
-  { id: '19', name: 'Dragon Fruit', description: 'Organic pink-fleshed dragon fruit.', price: 450, unit: 'kg', image: 'https://images.unsplash.com/photo-1527324688101-08d3663b6044?auto=format&fit=crop&q=90&w=1200' },
-  { id: '20', name: 'Grapes (Angur)', description: 'Fresh, sweet, and seedless green grapes from quality vineyards.', price: 280, unit: 'kg', image: 'https://images.unsplash.com/photo-1537640538966-79f369b41f8f?auto=format&fit=crop&q=90&w=1200' },
+  { id: '10', name: 'Papaya (Mewaa)', type: 'tropical', description: 'Buttery texture and sweet flavor, rich in digestive enzymes.', price: 110, unit: 'kg', image: 'https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&q=100&w=1600' },
+  { id: '18', name: 'Avocado (Ghyu Phal)', type: 'tropical', description: 'Butter-like texture and healthy fats, locally sourced from Dhankuta.', price: 380, unit: 'kg', image: 'https://images.unsplash.com/photo-1523049673857-eb18f1d7b578?auto=format&fit=crop&q=100&w=1600' },
+  { id: '1', name: 'Alphonso Mango', type: 'tropical', description: 'Premium export quality, extremely sweet and fiberless.', price: 450, unit: 'kg', image: 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&q=100&w=1600' },
+  { id: '2', name: 'Strawberry (Syanja)', type: 'berry', description: 'Hydropoincally grown strawberries from Syangja.', price: 250, unit: 'pack', image: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&q=100&w=1600' },
+  { id: '3', name: 'Watermelon (Tarbuz)', type: 'melon', description: 'Juicy summer treat from the Tarai plains.', price: 65, unit: 'kg', image: 'https://images.unsplash.com/photo-1589927986089-35812388d1f4?auto=format&fit=crop&q=100&w=1600' },
+  { id: '4', name: 'Apple (Mustang)', type: 'stone', description: 'Authentic organic apples from Marpha, Mustang. Crispy and sweet.', price: 260, unit: 'kg', image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6bccb?auto=format&fit=crop&q=100&w=1600' },
+  { id: '5', name: 'Orange (Suntala)', type: 'citrus', description: 'Sweet seasonal oranges from Gulmi and Syangja.', price: 140, unit: 'kg', image: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?auto=format&fit=crop&q=100&w=1600' },
+  { id: '6', name: 'Pomegranate (Anar)', type: 'other', description: 'Ruby-red select Grade A pomegranates.', price: 320, unit: 'kg', image: 'https://images.unsplash.com/photo-1541344999736-83eca272f6fc?auto=format&fit=crop&q=100&w=1600' },
+  { id: '7', name: 'Pear (Nashpati)', type: 'stone', description: 'Crisp Asian pears from the hills of Pharping.', price: 120, unit: 'kg', image: 'https://images.unsplash.com/photo-1514756331096-242f360fe3d5?auto=format&fit=crop&q=100&w=1600' },
+  { id: '8', name: 'Banana (Chini Champa)', type: 'tropical', description: 'Small, sweet, and aromatic local variety.', price: 140, unit: 'dozen', image: 'https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&q=100&w=1600' },
+  { id: '9', name: 'Guava (Amba)', type: 'tropical', description: 'Soft pink guavas with deep tropical aroma.', price: 95, unit: 'kg', image: 'https://images.unsplash.com/photo-1627914437299-906f0e9b9d3e?auto=format&fit=crop&q=100&w=1600' },
+  { id: '11', name: 'Litchi', type: 'berry', description: 'Seasonal delights from Eastern Nepal.', price: 180, unit: 'kg', image: 'https://images.unsplash.com/photo-1590005024862-6b6455bb529e?auto=format&fit=crop&q=100&w=1600' },
+  { id: '12', name: 'Pineapple', type: 'tropical', description: 'Freshly harvested from the plains of Jhapa.', price: 120, unit: 'piece', image: 'https://images.unsplash.com/photo-1550258114-189fa29b0008?auto=format&fit=crop&q=100&w=1600' },
+  { id: '13', name: 'Junar (Sindhuli)', type: 'citrus', description: 'The famous sweet citrus of the Sindhuli hills.', price: 160, unit: 'kg', image: 'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?auto=format&fit=crop&q=100&w=1600' },
+  { id: '14', name: 'Kiwi (Ilam)', type: 'tropical', description: 'Export quality green kiwis from Ilam.', price: 420, unit: 'kg', image: 'https://images.unsplash.com/photo-1585059895324-582fc18f900b?auto=format&fit=crop&q=100&w=1600' },
+  { id: '15', name: 'Peach (Aru)', type: 'stone', description: 'Sweet summer peaches from local orchards.', price: 180, unit: 'kg', image: 'https://images.unsplash.com/photo-1550828521-4cb4440559b1?auto=format&fit=crop&q=100&w=1600' },
+  { id: '16', name: 'Custard Apple', type: 'tropical', description: 'Locally grown sweet Sitafal.', price: 280, unit: 'kg', image: 'https://images.unsplash.com/photo-1647240367355-667793d5483f?auto=format&fit=crop&q=100&w=1600' },
+  { id: '17', name: 'Jackfruit', type: 'tropical', description: 'Rich and meaty tropical delight.', price: 80, unit: 'kg', image: 'https://images.unsplash.com/photo-1589135084988-cb940e794356?auto=format&fit=crop&q=100&w=1600' },
+  { id: '19', name: 'Dragon Fruit', type: 'tropical', description: 'Organic pink-fleshed dragon fruit.', price: 450, unit: 'kg', image: 'https://images.unsplash.com/photo-1527324688101-08d3663b6044?auto=format&fit=crop&q=100&w=1600' },
+  { id: '20', name: 'Grapes (Angur)', type: 'berry', description: 'Fresh, sweet, and seedless green grapes from quality vineyards.', price: 280, unit: 'kg', image: 'https://images.unsplash.com/photo-1596364721223-3061329d81f0?auto=format&fit=crop&q=100&w=1600' },
 ];
 
 const FAQ_DATA = [
@@ -775,121 +779,300 @@ const ReviewSubmissionModal = ({ isOpen, item, onClose, onSubmit }: {
   );
 };
 
-const FruitSection = ({ fruits, onImageUpload, onReset, onAddToCart, reviews, onRate, user }: { fruits: Fruit[], onImageUpload: (id: string, file: File) => void, onReset: () => void, onAddToCart: (fruit: Fruit, direct?: boolean) => void, reviews: Review[], onRate: (id: string, name: string) => void, user: User | null }) => {
-  const [showAll, setShowAll] = useState(false);
-  const displayedFruits = showAll ? fruits : fruits.slice(0, 6);
+const AnimatedFruitBg = ({ type }: { type: Fruit['type'] }) => {
+  switch (type) {
+    case 'tropical':
+      return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.2, 1],
+              rotate: [0, 5, 0],
+              x: [0, 10, 0]
+            }}
+            transition={{ duration: 10, repeat: Infinity, ease: "linear" }}
+            className="absolute -top-10 -right-10 w-40 h-40 bg-yellow-200/30 blur-3xl rounded-full"
+          />
+          <motion.div 
+            animate={{ 
+              y: [0, -40, 0],
+              rotate: [0, 45, 0],
+              scale: [1, 1.2, 1]
+            }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute top-20 left-10 w-6 h-6 bg-green-400/30 rounded-full blur-[2px]"
+          />
+          <motion.div 
+            animate={{ 
+              y: [0, 60, 0],
+              rotate: [0, -30, 0],
+              scale: [1, 0.8, 1]
+            }}
+            transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute bottom-10 right-20 w-8 h-8 bg-green-600/20 rounded-full blur-[3px]"
+          />
+          {/* Add leaf-like floating elements */}
+          {[...Array(4)].map((_, i) => (
+            <motion.div
+              key={i}
+              animate={{
+                y: [0, -100],
+                x: [0, (i % 2 === 0 ? 30 : -30)],
+                opacity: [0, 0.3, 0],
+                rotate: [0, 360]
+              }}
+              transition={{
+                duration: 15 + i * 2,
+                repeat: Infinity,
+                delay: i * 3
+              }}
+              className="absolute w-3 h-1 bg-green-200/40 rounded-full"
+              style={{ bottom: '-10%', left: `${20 + i * 20}%` }}
+            />
+          ))}
+        </div>
+      );
+    case 'berry':
+      return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none bg-gradient-to-tr from-pink-50/20 to-purple-50/20">
+          {[...Array(12)].map((_, i) => (
+            <motion.div
+              key={i}
+              initial={{ 
+                x: Math.random() * 300, 
+                y: Math.random() * 300,
+                scale: 0,
+                opacity: 0
+              }}
+              animate={{ 
+                y: [null, -200],
+                opacity: [0, 0.6, 0],
+                scale: [0.5, 1.5, 0.5],
+                x: [null, (Math.random() - 0.5) * 150 + 150]
+              }}
+              transition={{ 
+                duration: 4 + Math.random() * 6, 
+                repeat: Infinity,
+                delay: Math.random() * 5,
+                ease: "easeInOut"
+              }}
+              className="absolute w-2 h-2 bg-pink-400/30 rounded-full blur-[1px]"
+            />
+          ))}
+          <motion.div 
+            animate={{
+              scale: [1, 1.1, 1],
+              opacity: [0.1, 0.2, 0.1]
+            }}
+            transition={{ duration: 5, repeat: Infinity }}
+            className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,182,193,0.1),transparent_70%)]"
+          />
+        </div>
+      );
+    case 'citrus':
+      return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div 
+            animate={{ rotate: 360 }}
+            transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+            className="absolute -top-20 -left-20 w-72 h-72 border-[3px] border-orange-200/20 rounded-full border-dashed"
+          />
+          <motion.div 
+            animate={{ rotate: -360 }}
+            transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+            className="absolute -bottom-32 -right-32 w-60 h-60 border-[2px] border-yellow-300/15 rounded-full border-dashed"
+          />
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(255,165,0,0.05),transparent_60%)]" />
+        </div>
+      );
+    case 'stone':
+      return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div 
+            animate={{ 
+              x: [-30, 30],
+              opacity: [0.05, 0.2, 0.05]
+            }}
+            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0 bg-gradient-to-tr from-orange-100/15 via-transparent to-red-100/15"
+          />
+          {[...Array(5)].map((_, i) => (
+            <motion.div 
+              key={i}
+              animate={{ 
+                y: [0, 80],
+                x: [0, (i % 2 === 0 ? 15 : -15)],
+                opacity: [0, 0.5, 0],
+                scale: [0.8, 1.2, 0.8]
+              }}
+              transition={{ duration: 3 + i, repeat: Infinity, delay: i * 0.5 }}
+              className="absolute w-1.5 h-1.5 bg-orange-300/30 rounded-full blur-[1px]"
+              style={{ top: '10%', left: `${15 + i * 20}%` }}
+            />
+          ))}
+        </div>
+      );
+    case 'melon':
+      return (
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <motion.div 
+            animate={{ 
+              scale: [1, 1.2, 1],
+              opacity: [0.1, 0.3, 0.1]
+            }}
+            transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
+            className="absolute inset-0 bg-gradient-to-b from-green-50/30 to-transparent"
+          />
+          <motion.div 
+            animate={{ 
+              scale: [0.5, 2],
+              opacity: [0.4, 0]
+            }}
+            transition={{ duration: 4, repeat: Infinity, ease: "easeOut" }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-32 h-32 border-[2px] border-green-400/20 rounded-full"
+          />
+           <motion.div 
+            animate={{ 
+              scale: [0.8, 1.5],
+              opacity: [0.2, 0]
+            }}
+            transition={{ duration: 6, repeat: Infinity, ease: "easeOut", delay: 2 }}
+            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border-[1px] border-green-500/10 rounded-full"
+          />
+        </div>
+      );
+    default:
+      return null;
+  }
+};
 
+const FruitSection = ({ 
+  fruits, 
+  onImageUpload, 
+  onReset, 
+  onAddToCart,
+  reviews,
+  onRate,
+  user,
+  onEdit,
+  onAdd
+}: { 
+  fruits: Fruit[], 
+  onImageUpload: (id: string, file: File) => void, 
+  onReset: () => void,
+  onAddToCart: (fruit: Fruit, direct?: boolean) => void,
+  reviews: Review[],
+  onRate: (id: string, name: string) => void,
+  user: User | null,
+  onEdit: (fruit: Fruit) => void,
+  onAdd: () => void
+}) => {
   const isOwner = user?.email === 'kopitebbr@gmail.com';
-
-  const hasChanges = JSON.stringify(fruits) !== JSON.stringify(FRUITS_DATA);
-
+  
   return (
-    <section id="fruits" className="py-24 bg-white">
+    <section id="fruits" className="py-24 bg-white overflow-hidden scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">
-        <SectionHeading 
-          id="fruits-heading"
-          badge="Marketplace"
-          title="Hand-picked seasonal fruits"
-          subtitle="Direct from Nepal's finest orchards at competitive market rates."
-        />
+        <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
+          <SectionHeading 
+            id="fruits-heading"
+            badge="Farm to Table"
+            title="Freshly harvested, hand-picked."
+            subtitle="Straight from Nepal's best orchards. No preservatives, no cold storage, just pure nature."
+            centered={false}
+          />
+          {isOwner && (
+            <div className="flex gap-3">
+              <button 
+                onClick={onAdd}
+                className="px-6 py-4 bg-gray-900 text-white rounded-[24px] text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-green-600 transition-all shadow-xl active:scale-95"
+              >
+                <Plus size={16} /> Add Fruit
+              </button>
+              <button 
+                onClick={onReset}
+                className="px-6 py-4 bg-gray-50 text-gray-400 border border-gray-100 rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center gap-2 active:scale-95"
+              >
+                <RefreshCcw size={16} /> Revert to default images
+              </button>
+            </div>
+          )}
+        </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-          {displayedFruits.map((fruit, i) => {
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
+          {fruits.map((fruit, idx) => {
             const { avgRating, count } = getRatingData(fruit.id, reviews);
             return (
               <motion.div
                 key={fruit.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
-                transition={{ delay: i * 0.1 }}
+                transition={{ delay: idx * 0.1 }}
                 viewport={{ once: true }}
-                className="group bg-white rounded-[40px] overflow-hidden border border-gray-50 shadow-sm hover:shadow-2xl hover:shadow-green-100 transition-all duration-500"
+                className="group relative bg-gray-50 rounded-[48px] p-4 border border-gray-100 hover:bg-white hover:shadow-2xl hover:shadow-green-100 transition-all duration-500 hover:-translate-y-2 flex flex-col"
               >
-                <div className="h-64 overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gray-200 animate-pulse" />
+                <AnimatedFruitBg type={fruit.type} />
+                <div className="relative aspect-square rounded-[36px] overflow-hidden mb-6 shadow-inner ring-1 ring-black/5">
                   <img 
                     src={fruit.image} 
                     alt={fruit.name} 
-                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 relative z-10" 
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700 ease-out" 
                     referrerPolicy="no-referrer"
                   />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   
-                  {/* Rating Badge */}
-                  <div className="absolute top-4 left-4 z-20 flex gap-2">
-                    <button 
-                      onClick={() => onRate(fruit.id, fruit.name)}
-                      className="bg-white/90 backdrop-blur px-3 py-1.5 rounded-full shadow-sm flex items-center gap-1.5 hover:bg-white transition-all active:scale-95 border border-gray-100/50"
-                    >
-                      <span className="text-orange-500 font-bold">★</span>
-                      <span className="text-[10px] font-black text-gray-900">{avgRating > 0 ? avgRating.toFixed(1) : 'New'}</span>
-                      <span className="text-[10px] text-gray-400 font-bold">({count})</span>
-                    </button>
-                  </div>
+                  {isOwner && (
+                    <div className="absolute top-3 right-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <label className="p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110">
+                        <Camera size={18} className="text-gray-600" />
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) onImageUpload(fruit.id, file);
+                          }}
+                        />
+                      </label>
+                      <button 
+                        onClick={() => onEdit(fruit)}
+                        className="p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 hover:bg-white transition-all transform hover:scale-110"
+                      >
+                        <Edit2 size={18} className="text-blue-600" />
+                      </button>
+                    </div>
+                  )}
 
-                  {/* Upload Button - Only for Owner */}
-                {isOwner && (
-                  <label className="absolute top-4 right-4 bg-white/95 backdrop-blur shadow-xl p-3 rounded-2xl cursor-pointer hover:bg-green-600 hover:text-white transition-all z-20 active:scale-90 border border-gray-100 group-hover:scale-110 flex items-center gap-2 group/label">
-                    <Camera size={18} />
-                    <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/label:block overflow-hidden transition-all whitespace-nowrap">Upload</span>
-                    <input 
-                      type="file" 
-                      className="hidden" 
-                      accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) onImageUpload(fruit.id, file);
-                      }}
-                    />
-                  </label>
-                )}
-
-                <button 
-                  onClick={() => onAddToCart(fruit)}
-                  className="absolute bottom-4 right-4 bg-white/95 backdrop-blur shadow-xl p-3 rounded-2xl hover:bg-green-600 hover:text-white transition-all scale-100 md:scale-0 group-hover:scale-100 z-20 flex items-center gap-2 group/btn active:scale-90"
-                >
-                  <Plus size={20} />
-                  <span className="text-[10px] font-black uppercase tracking-widest overflow-hidden max-w-0 group-hover/btn:max-w-[100px] transition-all whitespace-nowrap">Add to cart</span>
-                </button>
-              </div>
-              <div className="p-8">
-                <div className="flex justify-between items-start mb-6">
-                  <h3 className="text-2xl font-bold text-gray-900">{fruit.name}</h3>
-                  <div className="text-xl font-bold text-green-600 font-display text-right">
-                    Rs. {fruit.price} <br/>
-                    <span className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">/{fruit.unit}</span>
+                  <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-2xl shadow-sm flex items-center gap-1.5 border border-gray-100">
+                    <Star size={12} className="fill-orange-400 text-orange-400" />
+                    <span className="text-[10px] font-black">{avgRating > 0 ? avgRating.toFixed(1) : 'New'}</span>
                   </div>
                 </div>
-                <p className="text-gray-500 leading-relaxed mb-6">
-                  {fruit.description}
-                </p>
-                <button 
-                  onClick={() => onAddToCart(fruit, true)}
-                  className="block w-full bg-gray-50 text-center py-3 rounded-2xl font-bold text-sm text-gray-900 hover:bg-green-600 hover:text-white transition-all shadow-sm"
-                >
-                  Buy Now
-                </button>
-              </div>
-            </motion.div>
-          );
-        })}
-      </div>
-        
-        <div className="mt-16 text-center flex flex-col items-center gap-6">
-          <button 
-            onClick={() => setShowAll(!showAll)}
-            className="inline-flex items-center gap-2 font-bold text-gray-900 border-b-2 border-green-500 pb-1 hover:gap-4 transition-all"
-          >
-            {showAll ? 'Show less' : 'View full menu'} <ArrowRight size={18} className={showAll ? '-rotate-90' : 'rotate-0'} />
-          </button>
 
-          {hasChanges && isOwner && (
-            <button 
-              onClick={onReset}
-              className="text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors uppercase tracking-[0.2em] bg-gray-50 px-4 py-2 rounded-full border border-gray-100 hover:border-red-100 hover:bg-red-50/30"
-            >
-              Reset to default farm images
-            </button>
-          )}
+                <div className="px-2 flex-grow">
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="text-lg font-black tracking-tight text-gray-900 group-hover:text-green-600 transition-colors">{fruit.name}</h3>
+                  </div>
+                  <p className="text-[11px] text-gray-500 font-medium mb-6 line-clamp-2 leading-relaxed">{fruit.description}</p>
+                </div>
+
+                <div className="mt-auto px-1 pb-2">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <p className="text-[10px] font-black uppercase tracking-widest text-gray-400 leading-none mb-1">Price per {fruit.unit}</p>
+                      <p className="text-xl font-black text-gray-900">Rs. {fruit.price}</p>
+                    </div>
+                    <button 
+                      onClick={() => onAddToCart(fruit)}
+                      className="w-12 h-12 bg-gray-900 text-white rounded-2xl flex items-center justify-center hover:bg-green-600 hover:shadow-lg hover:shadow-green-100 transition-all active:scale-90"
+                    >
+                      <Plus size={24} />
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })}
         </div>
       </div>
     </section>
@@ -1909,17 +2092,21 @@ const RewardsSection = ({
   points, 
   onRedeem, 
   onImageUpload,
-  user
+  user,
+  onEdit,
+  onAdd
 }: { 
   rewards: Reward[], 
   points: number, 
   onRedeem: (reward: Reward) => void,
   onImageUpload: (id: string, file: File) => void,
-  user: User | null
+  user: User | null,
+  onEdit: (reward: Reward) => void,
+  onAdd: () => void
 }) => {
   const isOwner = user?.email === 'kopitebbr@gmail.com';
   return (
-    <section id="rewards" className="py-24 bg-gray-50 overflow-hidden">
+    <section id="rewards" className="py-24 bg-gray-50 overflow-hidden scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
           <SectionHeading 
@@ -1929,13 +2116,23 @@ const RewardsSection = ({
             subtitle="Get points for every shopping and lab test. Redeem them for exclusive hampers and wellness vouchers."
             centered={false}
           />
-          <div className="p-8 bg-green-600 rounded-[40px] text-white flex items-center gap-6 shadow-2xl shadow-green-200 shrink-0">
-            <div>
-              <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Your Balance</p>
-              <p className="text-4xl font-bold font-display">{points.toLocaleString()}</p>
-            </div>
-            <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center">
-              <Gift size={32} />
+          <div className="flex items-center gap-3">
+             {isOwner && (
+              <button 
+                onClick={onAdd}
+                className="px-6 py-4 bg-gray-900 text-white rounded-[24px] text-xs font-black uppercase tracking-widest flex items-center gap-2 hover:bg-green-600 transition-all shadow-xl active:scale-95"
+              >
+                <Plus size={16} /> Add Reward
+              </button>
+            )}
+            <div className="p-8 bg-green-600 rounded-[40px] text-white flex items-center gap-6 shadow-2xl shadow-green-200 shrink-0">
+              <div>
+                <p className="text-xs font-bold uppercase tracking-widest opacity-80 mb-1">Your Balance</p>
+                <p className="text-4xl font-bold font-display">{points.toLocaleString()}</p>
+              </div>
+              <div className="w-16 h-16 bg-white/20 rounded-3xl flex items-center justify-center">
+                <Gift size={32} />
+              </div>
             </div>
           </div>
         </div>
@@ -1957,18 +2154,36 @@ const RewardsSection = ({
                 
                 {/* Image Upload Trigger - Owner Only */}
                 {isOwner && (
-                  <label className="absolute bottom-4 right-4 bg-white/90 hover:bg-white p-2 rounded-xl border border-gray-100 cursor-pointer shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                    <Camera size={16} className="text-gray-600" />
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) onImageUpload(reward.id, file);
+                  <div className="absolute bottom-4 right-4 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <label className="bg-white/90 hover:bg-white p-2.5 rounded-xl border border-gray-100 cursor-pointer shadow-lg transform hover:scale-110 transition-all">
+                      <Camera size={16} className="text-gray-600" />
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) onImageUpload(reward.id, file);
+                        }}
+                      />
+                    </label>
+                    <button 
+                      onClick={() => onEdit(reward)}
+                      className="bg-white/90 hover:bg-white p-2.5 rounded-xl border border-gray-100 shadow-lg transform hover:scale-110 transition-all"
+                    >
+                      <Edit2 size={16} className="text-blue-600" />
+                    </button>
+                    <button 
+                      onClick={() => {
+                        if (confirm('Delete this reward?')) {
+                          deleteDoc(doc(db, 'rewards', reward.id));
+                        }
                       }}
-                    />
-                  </label>
+                      className="bg-white/90 hover:bg-red-50 p-2.5 rounded-xl border border-gray-100 shadow-lg transform hover:scale-110 transition-all"
+                    >
+                      <Trash2 size={16} className="text-red-600" />
+                    </button>
+                  </div>
                 )}
               </div>
               <div className="p-8">
@@ -2508,6 +2723,174 @@ const Footer = () => {
   );
 };
 
+const EditItemModal = ({ 
+  isOpen, 
+  onClose, 
+  onSave, 
+  item, 
+  type 
+}: { 
+  isOpen: boolean, 
+  onClose: () => void, 
+  onSave: (data: any) => void,
+  item?: any,
+  type: 'fruit' | 'reward'
+}) => {
+  const [formData, setFormData] = useState<any>(item || {});
+
+  useEffect(() => {
+    if (item) setFormData(item);
+    else if (type === 'fruit') {
+      setFormData({
+        id: Math.random().toString(36).substr(2, 9),
+        name: '',
+        description: '',
+        price: 0,
+        unit: 'kg',
+        type: 'tropical',
+        image: 'https://images.unsplash.com/photo-1550258114-189fa29b0008?w=800'
+      });
+    } else {
+      setFormData({
+        id: Math.random().toString(36).substr(2, 9),
+        title: '',
+        points: 0,
+        image: 'https://images.unsplash.com/photo-1543158181-e6f9f670c5b5?w=800',
+        type: 'Voucher'
+      });
+    }
+  }, [item, type, isOpen]);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 sm:p-24 bg-black/60 backdrop-blur-md">
+      <motion.div 
+        initial={{ scale: 0.9, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        className="bg-white w-full max-w-xl rounded-[48px] p-10 shadow-2xl relative overflow-hidden"
+      >
+        <button onClick={onClose} className="absolute top-8 right-8 p-3 hover:bg-gray-100 rounded-2xl transition-colors" title="Close modal">
+          <X size={20} className="text-gray-400" />
+        </button>
+
+        <div className="mb-10">
+          <h2 className="text-3xl font-black italic tracking-tighter mb-2">
+            {item ? 'Modify' : 'Add New'} {type === 'fruit' ? 'Fruit' : 'Reward'}
+          </h2>
+          <p className="text-[10px] font-black uppercase tracking-[0.2em] text-green-600">Admin Control Panel</p>
+        </div>
+
+        <div className="space-y-6 max-h-[60vh] overflow-y-auto pr-2">
+          <div>
+            <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Name / Title</label>
+            <input 
+              type="text" 
+              value={type === 'fruit' ? formData.name : formData.title}
+              onChange={(e) => setFormData({ ...formData, [type === 'fruit' ? 'name' : 'title']: e.target.value })}
+              className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
+              placeholder={`Enter ${type} name`}
+            />
+          </div>
+
+          {type === 'fruit' && (
+            <>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Description</label>
+                <textarea 
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-500/20 min-h-[100px]"
+                  placeholder="Tell us about this fruit..."
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Price (NPR)</label>
+                  <input 
+                    type="number" 
+                    value={formData.price}
+                    onChange={(e) => setFormData({ ...formData, price: Number(e.target.value) })}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Unit</label>
+                  <select 
+                    value={formData.unit}
+                    onChange={(e) => setFormData({ ...formData, unit: e.target.value })}
+                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                  >
+                    <option value="kg">kilogram (kg)</option>
+                    <option value="dozen">dozen</option>
+                    <option value="pack">pack</option>
+                    <option value="piece">piece</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Animation Type</label>
+                <select 
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                >
+                  <option value="tropical">Tropical</option>
+                  <option value="berry">Berry</option>
+                  <option value="citrus">Citrus</option>
+                  <option value="stone">Stone Fruit</option>
+                  <option value="melon">Melon</option>
+                </select>
+              </div>
+            </>
+          )}
+
+          {type === 'reward' && (
+            <>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Points Required</label>
+                <input 
+                  type="number" 
+                  value={formData.points}
+                  onChange={(e) => setFormData({ ...formData, points: Number(e.target.value) })}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                />
+              </div>
+              <div>
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 block mb-2">Reward Type</label>
+                <select 
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:outline-none focus:ring-2 focus:ring-green-500/20"
+                >
+                  <option value="Voucher">Voucher</option>
+                  <option value="Gift Hamper">Gift Hamper</option>
+                  <option value="Service">Service</option>
+                </select>
+              </div>
+            </>
+          )}
+        </div>
+
+        <div className="mt-10 flex gap-4">
+          <button 
+            onClick={onClose}
+            className="flex-1 py-5 bg-gray-50 text-gray-400 rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-gray-100 transition-all"
+          >
+            Cancel
+          </button>
+          <button 
+            onClick={() => onSave(formData)}
+            className="flex-[2] py-5 bg-gray-900 text-white rounded-3xl font-black uppercase tracking-widest text-xs hover:bg-green-600 transition-all shadow-xl shadow-gray-200"
+          >
+            Save Changes
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+};
+
 // --- Main App ---
 
 const BottomNav = ({ onOpenCart, cartCount, user, onSignIn }: { onOpenCart: () => void, cartCount: number, user: User | null, onSignIn: () => void }) => {
@@ -2574,6 +2957,11 @@ export default function App() {
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [activities, setActivities] = useState<UserActivity[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Admin state
+  const [isAdminModalOpen, setIsAdminModalOpen] = useState(false);
+  const [adminItem, setAdminItem] = useState<any>(null);
+  const [adminType, setAdminType] = useState<'fruit' | 'reward'>('fruit');
 
   const cartCount = cart.reduce((acc, curr) => acc + curr.quantity, 0);
 
@@ -2904,6 +3292,16 @@ export default function App() {
             setIsReviewModalOpen(true);
           }}
           user={currentUser}
+          onEdit={(fruit) => {
+            setAdminItem(fruit);
+            setAdminType('fruit');
+            setIsAdminModalOpen(true);
+          }}
+          onAdd={() => {
+            setAdminItem(null);
+            setAdminType('fruit');
+            setIsAdminModalOpen(true);
+          }}
         />
         <FitnessSection onAddToCart={addToCart} />
         <CheckupsSection 
@@ -2921,6 +3319,16 @@ export default function App() {
           onRedeem={handleRedeemReward}
           onImageUpload={handleRewardImageUpload}
           user={currentUser}
+          onEdit={(reward) => {
+            setAdminItem(reward);
+            setAdminType('reward');
+            setIsAdminModalOpen(true);
+          }}
+          onAdd={() => {
+            setAdminItem(null);
+            setAdminType('reward');
+            setIsAdminModalOpen(true);
+          }}
         />
         <ActivitySection 
           activities={activities} 
@@ -2955,6 +3363,34 @@ export default function App() {
         user={currentUser}
         onSignIn={() => setIsAuthModalOpen(true)}
       />
+
+      <AnimatePresence>
+        {isAdminModalOpen && (
+          <EditItemModal 
+            isOpen={isAdminModalOpen}
+            onClose={() => setIsAdminModalOpen(false)}
+            type={adminType}
+            item={adminItem}
+            onSave={async (data) => {
+              if (adminType === 'fruit') {
+                try {
+                  await setDoc(doc(db, 'fruits', data.id), data, { merge: true });
+                  setIsAdminModalOpen(false);
+                } catch (err) {
+                  handleFirestoreError(err, OperationType.WRITE, `fruits/${data.id}`);
+                }
+              } else {
+                try {
+                  await setDoc(doc(db, 'rewards', data.id), data, { merge: true });
+                  setIsAdminModalOpen(false);
+                } catch (err) {
+                  handleFirestoreError(err, OperationType.WRITE, `rewards/${data.id}`);
+                }
+              }
+            }}
+          />
+        )}
+      </AnimatePresence>
 
       <AnimatePresence>
         {isCartOpen && (
