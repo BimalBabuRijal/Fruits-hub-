@@ -1,0 +1,106 @@
+{
+  "entities": {
+    "Fruit": {
+      "title": "Fruit",
+      "description": "Represents a fruit available in the marketplace",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "description": { "type": "string" },
+        "price": { "type": "number" },
+        "unit": { "type": "string" },
+        "image": { "type": "string" }
+      },
+      "required": ["id", "name", "price", "unit", "image"]
+    },
+    "Review": {
+      "title": "Review",
+      "description": "User review for an item",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "itemId": { "type": "string" },
+        "userName": { "type": "string" },
+        "rating": { "type": "number" },
+        "comment": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["itemId", "userName", "rating", "comment", "date"]
+    },
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "email": { "type": "string" },
+        "points": { "type": "number" },
+        "avatar": { "type": "string" }
+      },
+      "required": ["id", "name", "email", "points"]
+    },
+    "UserActivity": {
+      "title": "UserActivity",
+      "description": "User activity log (purchases, redemptions, etc.)",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["Purchase", "Redemption", "Review"] },
+        "title": { "type": "string" },
+        "amount": { "type": "number" },
+        "points": { "type": "number" },
+        "date": { "type": "string", "format": "date-time" }
+      },
+      "required": ["type", "title", "amount", "points", "date"]
+    },
+    "Reward": {
+      "title": "Reward",
+      "description": "Redeemable reward for users",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "points": { "type": "number" },
+        "image": { "type": "string" },
+        "type": { "type": "string", "enum": ["Gift Hamper", "Voucher", "Service"] }
+      },
+      "required": ["id", "title", "points", "image", "type"]
+    },
+    "CompanySettings": {
+      "title": "CompanySettings",
+      "description": "Global settings for the company",
+      "type": "object",
+      "properties": {
+        "paymentQR": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/fruits/{fruitId}": {
+      "schema": "Fruit",
+      "description": "Collection of fruits"
+    },
+    "/reviews/{reviewId}": {
+      "schema": "Review",
+      "description": "Collection of public reviews"
+    },
+    "/rewards/{rewardId}": {
+      "schema": "Reward",
+      "description": "Collection of available rewards"
+    },
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data"
+    },
+    "/users/{userId}/activities/{activityId}": {
+      "schema": "UserActivity",
+      "description": "User-specific activity logs"
+    },
+    "/settings/company": {
+      "schema": "CompanySettings",
+      "description": "Global company settings"
+    }
+  }
+}

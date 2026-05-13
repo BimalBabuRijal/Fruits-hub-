@@ -49,7 +49,67 @@ import {
   InfoWindow
 } from '@vis.gl/react-google-maps';
 
+import { 
+  onAuthStateChanged, 
+  signInWithPopup, 
+  GoogleAuthProvider, 
+  signOut,
+  User as FirebaseUser
+} from 'firebase/auth';
+import { 
+  collection, 
+  doc, 
+  setDoc, 
+  getDoc, 
+  getDocs, 
+  onSnapshot, 
+  query, 
+  orderBy, 
+  addDoc, 
+  updateDoc,
+  deleteDoc,
+  writeBatch
+} from 'firebase/firestore';
+import { auth, db } from './lib/firebase';
+
 // --- Types & Data ---
+
+enum OperationType {
+  CREATE = 'create',
+  UPDATE = 'update',
+  DELETE = 'delete',
+  LIST = 'list',
+  GET = 'get',
+  WRITE = 'write',
+}
+
+interface FirestoreErrorInfo {
+  error: string;
+  operationType: OperationType;
+  path: string | null;
+  authInfo: {
+    userId?: string | null;
+    email?: string | null;
+    emailVerified?: boolean | null;
+    isAnonymous?: boolean | null;
+  }
+}
+
+function handleFirestoreError(error: unknown, operationType: OperationType, path: string | null) {
+  const errInfo: FirestoreErrorInfo = {
+    error: error instanceof Error ? error.message : String(error),
+    authInfo: {
+      userId: auth.currentUser?.uid,
+      email: auth.currentUser?.email,
+      emailVerified: auth.currentUser?.emailVerified,
+      isAnonymous: auth.currentUser?.isAnonymous,
+    },
+    operationType,
+    path
+  }
+  console.error('Firestore Error: ', JSON.stringify(errInfo));
+  // In a real app, you might show a toast here
+}
 
 interface User {
   id: string;
@@ -164,7 +224,7 @@ const FRUITS_DATA: Fruit[] = [
   { id: '1', name: 'Alphonso Mango', description: 'Premium export quality, extremely sweet and fiberless.', price: 450, unit: 'kg', image: 'https://images.unsplash.com/photo-1553279768-865429fa0078?auto=format&fit=crop&q=90&w=1200' },
   { id: '2', name: 'Strawberry (Syanja)', description: 'Hydropoincally grown strawberries from Syangja.', price: 250, unit: 'pack', image: 'https://images.unsplash.com/photo-1464965911861-746a04b4bca6?auto=format&fit=crop&q=90&w=1200' },
   { id: '3', name: 'Watermelon (Tarbuz)', description: 'Juicy summer treat from the Tarai plains.', price: 65, unit: 'kg', image: 'https://images.unsplash.com/photo-1587049633562-ad78524354be?auto=format&fit=crop&q=90&w=1200' },
-  { id: '4', name: 'Apple (Mustang)', description: 'Authentic organic apples from Marpha, Mustang.', price: 260, unit: 'kg', image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6bccb?auto=format&fit=crop&q=90&w=1200' },
+  { id: '4', name: 'Apple (Mustang)', description: 'Authentic organic apples from Marpha, Mustang. Crispy and sweet.', price: 260, unit: 'kg', image: 'https://images.unsplash.com/photo-1610398616147-3cf93077af60?auto=format&fit=crop&q=90&w=1200' },
   { id: '5', name: 'Orange (Suntala)', description: 'Sweet seasonal oranges from Gulmi and Syangja.', price: 140, unit: 'kg', image: 'https://images.unsplash.com/photo-1557800636-894a64c1696f?auto=format&fit=crop&q=90&w=1200' },
   { id: '6', name: 'Pomegranate (Anar)', description: 'Ruby-red select Grade A pomegranates.', price: 320, unit: 'kg', image: 'https://images.unsplash.com/photo-1541344999736-83eca272f6fc?auto=format&fit=crop&q=90&w=1200' },
   { id: '7', name: 'Pear (Nashpati)', description: 'Crisp Asian pears from the hills of Pharping.', price: 120, unit: 'kg', image: 'https://images.unsplash.com/photo-1544256718-3bcf237f3974?auto=format&fit=crop&q=90&w=1200' },
@@ -335,53 +395,24 @@ const DeliveryTrackingMap = ({ customerLocation, riderLocation }: {
   );
 };
 
-const AuthModal = ({ isOpen, onClose, onAuthSuccess }: { isOpen: boolean, onClose: () => void, onAuthSuccess: (user: User) => void }) => {
-  const [mode, setMode] = useState<'signin' | 'signup'>('signin');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [name, setName] = useState('');
+const AuthModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: FormEvent) => {
-    e.preventDefault();
+  const handleGoogleLogin = async () => {
+    setLoading(true);
     setError(null);
-    
-    // Simple localStorage based auth for demonstration
-    const savedUsers = localStorage.getItem('freshvita_users');
-    const users: User[] = savedUsers ? JSON.parse(savedUsers) : [];
-
-    if (mode === 'signup') {
-      if (users.find(u => u.email === email)) {
-        setError('User already exists');
-        return;
-      }
-      const newUser: User = {
-        id: Math.random().toString(36).substr(2, 9),
-        name: name,
-        email: email,
-        points: 100, // Welcome points
-        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
-      };
-      localStorage.setItem('freshvita_users', JSON.stringify([...users, newUser]));
-      onAuthSuccess(newUser);
+    try {
+      const provider = new GoogleAuthProvider();
+      await signInWithPopup(auth, provider);
       onClose();
-    } else {
-      const existingUser = users.find(u => u.email === email);
-      if (existingUser || email === 'kopitebbr@gmail.com') {
-        const user = existingUser || {
-          id: 'owner',
-          name: 'Owner',
-          email: 'kopitebbr@gmail.com',
-          points: 5000,
-          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=owner`
-        };
-        onAuthSuccess(user as User);
-        onClose();
-      } else {
-        setError('Invalid credentials');
-      }
+    } catch (err: any) {
+      setError(err.message);
+      handleFirestoreError(err, OperationType.GET, 'auth');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -399,15 +430,15 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }: { isOpen: boolean, onClos
           initial={{ opacity: 0, scale: 0.9, y: 20 }}
           animate={{ opacity: 1, scale: 1, y: 0 }}
           exit={{ opacity: 0, scale: 0.9, y: 20 }}
-          className="bg-white w-full max-w-md rounded-[40px] overflow-hidden relative z-10 shadow-2xl"
+          className="bg-white w-full max-w-sm rounded-[40px] overflow-hidden relative z-10 shadow-2xl"
         >
           <div className="p-8 border-b border-gray-100 flex justify-between items-center">
             <div>
               <h3 className="text-2xl font-black italic tracking-tighter">
-                {mode === 'signin' ? 'Welcome Back' : 'Join FreshVita'}
+                Welcome to FreshVita
               </h3>
               <p className="text-[10px] font-black uppercase tracking-widest text-green-600">
-                {mode === 'signin' ? 'Sign in to your account' : 'Create your health profile'}
+                Your health journey starts here
               </p>
             </div>
             <button onClick={onClose} className="p-2 hover:bg-gray-100 rounded-xl transition-all">
@@ -415,94 +446,30 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }: { isOpen: boolean, onClos
             </button>
           </div>
 
-          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+          <div className="p-8 space-y-6">
             {error && (
               <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-xs font-bold border border-red-100">
                 {error}
               </div>
             )}
-            <div className="flex bg-gray-50 p-1 rounded-2xl mb-4">
-              <button 
-                type="button"
-                onClick={() => setMode('signin')}
-                className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'signin' ? 'bg-white shadow-sm text-green-600' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                Sign In
-              </button>
-              <button 
-                type="button"
-                onClick={() => setMode('signup')}
-                className={`flex-1 py-3 text-xs font-black uppercase tracking-widest rounded-xl transition-all ${mode === 'signup' ? 'bg-white shadow-sm text-green-600' : 'text-gray-400 hover:text-gray-600'}`}
-              >
-                Sign Up
-              </button>
-            </div>
-
-            <div className="space-y-4">
-              {mode === 'signup' && (
-                <div>
-                  <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Full Name</label>
-                  <input 
-                    required
-                    type="text" 
-                    value={name}
-                    onChange={e => setName(e.target.value)}
-                    placeholder="Rahul Sharma" 
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white focus:border-green-600 outline-none transition-all"
-                  />
-                </div>
-              )}
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Email Address</label>
-                <div className="relative">
-                  <Mail className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
-                  <input 
-                    required
-                    type="email" 
-                    value={email}
-                    onChange={e => setEmail(e.target.value)}
-                    placeholder="email@example.com" 
-                    className="w-full bg-gray-50 border border-gray-100 rounded-2xl pl-16 pr-6 py-4 text-sm font-bold focus:bg-white focus:border-green-600 outline-none transition-all"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2 block">Password</label>
-                <input 
-                  required
-                  type="password" 
-                  value={password}
-                  onChange={e => setPassword(e.target.value)}
-                  placeholder="••••••••" 
-                  className="w-full bg-gray-50 border border-gray-100 rounded-2xl px-6 py-4 text-sm font-bold focus:bg-white focus:border-green-600 outline-none transition-all"
-                />
-              </div>
-            </div>
+            
+            <p className="text-sm text-gray-500 leading-relaxed text-center">
+              Sign in with Google to sync your points, track your health reports, and access exclusive rewards.
+            </p>
 
             <button 
-              type="submit"
-              className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-black uppercase tracking-widest shadow-xl hover:bg-green-600 transition-all active:scale-95 flex items-center justify-center gap-3"
+              onClick={handleGoogleLogin}
+              disabled={loading}
+              className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-black uppercase tracking-widest shadow-xl hover:bg-green-600 transition-all active:scale-95 flex items-center justify-center gap-4 disabled:opacity-50"
             >
-              {mode === 'signin' ? 'Sign In' : 'Create Account'}
+              <img src="https://www.google.com/favicon.ico" className="w-5 h-5" alt="Google" />
+              {loading ? 'Signing in...' : 'Sign in with Google'}
             </button>
 
-            <div className="pt-4 flex items-center gap-4">
-              <div className="flex-1 h-[1px] bg-gray-100" />
-              <span className="text-[10px] font-black uppercase tracking-widest text-gray-300">Or continue with</span>
-              <div className="flex-1 h-[1px] bg-gray-100" />
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <button type="button" className="flex items-center justify-center gap-2 py-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all font-bold text-sm">
-                <img src="https://www.google.com/favicon.ico" className="w-4 h-4" alt="Google" />
-                Google
-              </button>
-              <button type="button" className="flex items-center justify-center gap-2 py-4 border border-gray-100 rounded-2xl hover:bg-gray-50 transition-all font-bold text-sm">
-                <Apple size={16} />
-                Apple
-              </button>
-            </div>
-          </form>
+            <p className="text-[9px] text-center text-gray-400 font-bold uppercase tracking-[0.2em] px-4">
+              By signing in, you agree to our terms of service and privacy policy.
+            </p>
+          </div>
         </motion.div>
       </div>
     </AnimatePresence>
@@ -588,9 +555,21 @@ const Navbar = ({ onOpenCart, cartCount, points, user, onSignIn, onSignOut }: {
 
           {user ? (
             <div className="flex items-center gap-3 bg-gray-50 p-1 pr-4 rounded-full border border-gray-100 group">
-              <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full shadow-sm" />
+              <div className="relative">
+                <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full shadow-sm" />
+                {user.email === 'kopitebbr@gmail.com' && (
+                  <div className="absolute -top-1 -right-1 bg-green-600 w-3 h-3 rounded-full border-2 border-white flex items-center justify-center">
+                    <Check size={6} className="text-white" />
+                  </div>
+                )}
+              </div>
               <div className="flex flex-col">
-                <span className="text-[10px] font-black tracking-tight">{user.name}</span>
+                <div className="flex items-center gap-1">
+                  <span className="text-[10px] font-black tracking-tight">{user.name}</span>
+                  {user.email === 'kopitebbr@gmail.com' && (
+                    <span className="text-[7px] bg-green-100 text-green-700 px-1 rounded-sm font-black uppercase">Owner</span>
+                  )}
+                </div>
                 <button onClick={onSignOut} className="text-[8px] font-black uppercase text-red-500 hover:text-red-600 transition-colors text-left">Logout</button>
               </div>
             </div>
@@ -2580,221 +2559,260 @@ const handlePurchase = () => {
 };
 
 export default function App() {
-  const [fruits, setFruits] = useState<Fruit[]>(() => {
-    const saved = localStorage.getItem('freshvita_fruits');
-    if (!saved) return FRUITS_DATA;
-    
-    try {
-      const parsedSaved: Fruit[] = JSON.parse(saved);
-      // Merge: Keep saved changes for existing IDs, add new ones from FRUITS_DATA
-      const merged = FRUITS_DATA.map(defaultFruit => {
-        const savedFruit = parsedSaved.find(sf => sf.id === defaultFruit.id);
-        return savedFruit ? { ...defaultFruit, image: savedFruit.image } : defaultFruit;
-      });
-      return merged;
-    } catch (e) {
-      return FRUITS_DATA;
-    }
-  });
-
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem('freshvita_cart');
-      if (!saved) return [];
-      const parsed = JSON.parse(saved);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch (e) {
-      console.error('Failed to parse cart', e);
-      return [];
-    }
-  });
+  const [fruits, setFruits] = useState<Fruit[]>(FRUITS_DATA);
+  const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [shouldAutoCheckout, setShouldAutoCheckout] = useState(false);
   const [selectedZoneId, setSelectedZoneId] = useState(DELIVERY_ZONES[0].id);
-  const [userPoints, setUserPoints] = useState(() => {
-    const saved = localStorage.getItem('freshvita_points');
-    return saved ? parseInt(saved) : 1250;
-  });
-  const [rewards, setRewards] = useState<Reward[]>(() => {
-    const saved = localStorage.getItem('freshvita_rewards');
-    if (!saved) return REWARDS_DATA;
-    try {
-      const parsed: Reward[] = JSON.parse(saved);
-      return parsed.length > 0 ? parsed : REWARDS_DATA;
-    } catch (e) {
-      return REWARDS_DATA;
-    }
-  });
-
-  const [paymentQR, setPaymentQR] = useState(() => {
-    return localStorage.getItem('freshvita_payment_qr') || '';
-  });
-
-  const [reviews, setReviews] = useState<Review[]>(() => {
-    const saved = localStorage.getItem('freshvita_reviews');
-    if (!saved) return INITIAL_REVIEWS;
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      return INITIAL_REVIEWS;
-    }
-  });
-
+  const [userPoints, setUserPoints] = useState(0);
+  const [rewards, setRewards] = useState<Reward[]>(REWARDS_DATA);
+  const [paymentQR, setPaymentQR] = useState('');
+  const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewItem, setReviewItem] = useState<{ id: string, name: string } | null>(null);
-
-  const [currentUser, setCurrentUser] = useState<User | null>(() => {
-    const saved = localStorage.getItem('freshvita_user');
-    try {
-      return saved ? JSON.parse(saved) : null;
-    } catch (e) {
-      return null;
-    }
-  });
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [activities, setActivities] = useState<UserActivity[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const [activities, setActivities] = useState<UserActivity[]>(() => {
-    const saved = localStorage.getItem('freshvita_activities');
-    if (!saved) return [];
-    try {
-      return JSON.parse(saved);
-    } catch (e) {
-      return [];
-    }
-  });
+  const cartCount = cart.reduce((acc, curr) => acc + curr.quantity, 0);
 
-  const cartCount = Array.isArray(cart) ? cart.reduce((acc, curr) => acc + curr.quantity, 0) : 0;
-
+  // 1. Auth Listener
   useEffect(() => {
-    localStorage.setItem('freshvita_fruits', JSON.stringify(fruits));
-  }, [fruits]);
-
-  useEffect(() => {
-    localStorage.setItem('freshvita_cart', JSON.stringify(cart));
-  }, [cart]);
-
-  useEffect(() => {
-    localStorage.setItem('freshvita_points', userPoints.toString());
-  }, [userPoints]);
-
-  useEffect(() => {
-    localStorage.setItem('freshvita_rewards', JSON.stringify(rewards));
-  }, [rewards]);
-
-  useEffect(() => {
-    localStorage.setItem('freshvita_payment_qr', paymentQR);
-  }, [paymentQR]);
-
-  useEffect(() => {
-    localStorage.setItem('freshvita_activities', JSON.stringify(activities));
-  }, [activities]);
-
-  useEffect(() => {
-    localStorage.setItem('freshvita_reviews', JSON.stringify(reviews));
-  }, [reviews]);
-
-  useEffect(() => {
-    if (currentUser) {
-      localStorage.setItem('freshvita_user', JSON.stringify(currentUser));
-    } else {
-      localStorage.removeItem('freshvita_user');
-    }
-  }, [currentUser]);
-
-  const addActivity = (activity: Omit<UserActivity, 'id' | 'date'>) => {
-    const newActivity: UserActivity = {
-      ...activity,
-      id: Math.random().toString(36).substr(2, 9),
-      date: new Date().toLocaleDateString('en-US', { 
-        month: 'short', 
-        day: 'numeric', 
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
-      })
-    };
-    setActivities(prev => [newActivity, ...prev].slice(0, 50)); // Keep last 50
-
-    // Earn points on purchase
-    if (activity.type === 'Purchase' && activity.points > 0) {
-      setUserPoints(prev => prev + activity.points);
-    }
-  };
-
-  const handleRewardImageUpload = (id: string, file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      setRewards(prev => prev.map(r => r.id === id ? { ...r, image: base64 } : r));
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleQRUpload = (file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      setPaymentQR(base64);
-    };
-    reader.readAsDataURL(file);
-  };
-
-  const handleAddReview = (review: Omit<Review, 'id' | 'date'>) => {
-    const newReview: Review = {
-      ...review,
-      id: Math.random().toString(36).substr(2, 9),
-      date: new Date().toISOString().split('T')[0]
-    };
-    setReviews(prev => [newReview, ...prev]);
-    setIsReviewModalOpen(false);
-    
-    addActivity({
-      type: 'Review',
-      title: `Reviewed: ${reviewItem?.name}`,
-      amount: 0,
-      points: 50 // Reward for review
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // Check if user document exists, if not create it
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        try {
+          const userDoc = await getDoc(userDocRef);
+          if (!userDoc.exists()) {
+            const newUser: User = {
+              id: firebaseUser.uid,
+              name: firebaseUser.displayName || 'Anonymous',
+              email: firebaseUser.email || '',
+              points: 100, // Welcome points
+              avatar: firebaseUser.photoURL || `https://api.dicebear.com/7.x/avataaars/svg?seed=${firebaseUser.uid}`
+            };
+            await setDoc(userDocRef, newUser);
+          }
+        } catch (err) {
+          handleFirestoreError(err, OperationType.GET, `users/${firebaseUser.uid}`);
+        }
+      } else {
+        setCurrentUser(null);
+        setUserPoints(0);
+        setActivities([]);
+      }
+      setLoading(false);
     });
+    return () => unsubscribe();
+  }, []);
+
+  // 2. User Data Listener
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
+    const userDocRef = doc(db, 'users', auth.currentUser.uid);
+    const unsubUser = onSnapshot(userDocRef, (doc) => {
+      if (doc.exists()) {
+        const data = doc.data() as User;
+        setCurrentUser(data);
+        setUserPoints(data.points);
+      }
+    }, (err) => handleFirestoreError(err, OperationType.GET, `users/${auth.currentUser?.uid}`));
+
+    const activitiesQuery = query(collection(db, 'users', auth.currentUser.uid, 'activities'), orderBy('date', 'desc'));
+    const unsubActivities = onSnapshot(activitiesQuery, (snapshot) => {
+      const docs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as UserActivity));
+      setActivities(docs);
+    }, (err) => handleFirestoreError(err, OperationType.GET, `users/${auth.currentUser?.uid}/activities`));
+
+    return () => {
+      unsubUser();
+      unsubActivities();
+    };
+  }, [auth.currentUser]);
+
+  // 3. Global Data Listeners
+  useEffect(() => {
+    const unsubFruits = onSnapshot(collection(db, 'fruits'), (snapshot) => {
+      if (snapshot.empty && auth.currentUser?.email === 'kopitebbr@gmail.com') {
+        // Seed fruits if empty and owner logged in
+        const batch = writeBatch(db);
+        FRUITS_DATA.forEach(f => {
+          batch.set(doc(db, 'fruits', f.id), f);
+        });
+        batch.commit();
+      } else if (!snapshot.empty) {
+        setFruits(snapshot.docs.map(doc => doc.data() as Fruit));
+      }
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'fruits'));
+
+    const unsubRewards = onSnapshot(collection(db, 'rewards'), (snapshot) => {
+      if (snapshot.empty && auth.currentUser?.email === 'kopitebbr@gmail.com') {
+        const batch = writeBatch(db);
+        REWARDS_DATA.forEach(r => {
+          batch.set(doc(db, 'rewards', r.id), r);
+        });
+        batch.commit();
+      } else if (!snapshot.empty) {
+        setRewards(snapshot.docs.map(doc => doc.data() as Reward));
+      }
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'rewards'));
+
+    const unsubReviews = onSnapshot(collection(db, 'reviews'), (snapshot) => {
+      if (!snapshot.empty) {
+        setReviews(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Review)));
+      }
+    }, (err) => handleFirestoreError(err, OperationType.LIST, 'reviews'));
+
+    const unsubSettings = onSnapshot(doc(db, 'settings', 'company'), (doc) => {
+      if (doc.exists()) {
+        setPaymentQR(doc.data().paymentQR || '');
+      }
+    }, (err) => handleFirestoreError(err, OperationType.GET, 'settings/company'));
+
+    return () => {
+      unsubFruits();
+      unsubRewards();
+      unsubReviews();
+      unsubSettings();
+    };
+  }, [auth.currentUser]);
+
+  const addActivity = async (activity: Omit<UserActivity, 'id' | 'date'>) => {
+    if (!auth.currentUser) return;
+
+    try {
+      const activityData = {
+        ...activity,
+        date: new Date().toISOString()
+      };
+      await addDoc(collection(db, 'users', auth.currentUser.uid, 'activities'), activityData);
+
+      // Earn points on purchase
+      if (activity.type === 'Purchase' && activity.points > 0) {
+        const userDocRef = doc(db, 'users', auth.currentUser.uid);
+        await updateDoc(userDocRef, {
+          points: userPoints + activity.points
+        });
+      }
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, `users/${auth.currentUser.uid}/activities`);
+    }
   };
 
-  const handleRedeemReward = (reward: Reward) => {
+  const handleRewardImageUpload = async (id: string, file: File) => {
+    if (auth.currentUser?.email !== 'kopitebbr@gmail.com') return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      try {
+        await updateDoc(doc(db, 'rewards', id), { image: base64 });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, `rewards/${id}`);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleQRUpload = async (file: File) => {
+    if (auth.currentUser?.email !== 'kopitebbr@gmail.com') return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      const base64 = e.target?.result as string;
+      try {
+        await setDoc(doc(db, 'settings', 'company'), { paymentQR: base64 }, { merge: true });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, 'settings/company');
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleAddReview = async (review: Omit<Review, 'id' | 'date'>) => {
+    try {
+      const reviewData = {
+        ...review,
+        date: new Date().toISOString()
+      };
+      await addDoc(collection(db, 'reviews'), reviewData);
+      setIsReviewModalOpen(false);
+      
+      addActivity({
+        type: 'Review',
+        title: `Reviewed: ${reviewItem?.name}`,
+        amount: 0,
+        points: 50 // Reward for review
+      });
+    } catch (err) {
+      handleFirestoreError(err, OperationType.CREATE, 'reviews');
+    }
+  };
+
+  const handleRedeemReward = async (reward: Reward) => {
+    if (!auth.currentUser) return;
     if (userPoints < reward.points) {
       alert(`You need ${reward.points - userPoints} more points to redeem this reward!`);
       return;
     }
 
     if (window.confirm(`Redeem ${reward.title} for ${reward.points} points?`)) {
-      setUserPoints(prev => prev - reward.points);
-      
-      // Track activity
-      addActivity({
-        type: 'Redemption',
-        title: `Redeemed: ${reward.title}`,
-        amount: 0,
-        points: reward.points
-      });
+      try {
+        await updateDoc(doc(db, 'users', auth.currentUser.uid), {
+          points: userPoints - reward.points
+        });
+        
+        // Track activity
+        await addActivity({
+          type: 'Redemption',
+          title: `Redeemed: ${reward.title}`,
+          amount: 0,
+          points: reward.points
+        });
 
-      confetti({
-        particleCount: 150,
-        spread: 70,
-        origin: { y: 0.6 },
-        colors: ['#FFD700', '#FFA500', '#FFFFFF']
-      });
-      alert(`Success! You have redeemed ${reward.title}. Our team will contact you shortly.`);
+        confetti({
+          particleCount: 150,
+          spread: 70,
+          origin: { y: 0.6 },
+          colors: ['#FFD700', '#FFA500', '#FFFFFF']
+        });
+        alert(`Success! You have redeemed ${reward.title}. Our team will contact you shortly.`);
+      } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, `users/${auth.currentUser.uid}`);
+      }
     }
   };
 
-  const handleImageUpload = (id: string, file: File) => {
+  const handleImageUpload = async (id: string, file: File) => {
+    if (auth.currentUser?.email !== 'kopitebbr@gmail.com') return;
+
     const reader = new FileReader();
-    reader.onload = (e) => {
+    reader.onload = async (e) => {
       const base64 = e.target?.result as string;
-      setFruits(prev => prev.map(f => f.id === id ? { ...f, image: base64 } : f));
+      try {
+        await updateDoc(doc(db, 'fruits', id), { image: base64 });
+      } catch (err) {
+        handleFirestoreError(err, OperationType.UPDATE, `fruits/${id}`);
+      }
     };
     reader.readAsDataURL(file);
   };
 
-  const handleImageReset = () => {
+  const handleImageReset = async () => {
+    if (auth.currentUser?.email !== 'kopitebbr@gmail.com') return;
     if (window.confirm('Revert all fruit images to farm defaults?')) {
-      setFruits(FRUITS_DATA);
+      try {
+        const batch = writeBatch(db);
+        FRUITS_DATA.forEach(f => {
+          batch.set(doc(db, 'fruits', f.id), f);
+        });
+        await batch.commit();
+      } catch (err) {
+        handleFirestoreError(err, OperationType.WRITE, 'fruits');
+      }
     }
   };
 
@@ -2850,6 +2868,15 @@ export default function App() {
     }
   }, []);
 
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-white flex flex-col items-center justify-center">
+        <div className="w-16 h-16 border-4 border-green-100 border-t-green-600 rounded-full animate-spin mb-4" />
+        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-gray-400">Loading FreshVita...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-green-100 selection:text-green-900 pb-16 md:pb-0">
       <Navbar 
@@ -2858,21 +2885,11 @@ export default function App() {
         points={userPoints} 
         user={currentUser}
         onSignIn={() => setIsAuthModalOpen(true)}
-        onSignOut={() => setCurrentUser(null)}
+        onSignOut={() => signOut(auth)}
       />
       <AuthModal 
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
-        onAuthSuccess={(user) => {
-          setCurrentUser(user);
-          if (user.points > 0) setUserPoints(user.points);
-          confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 },
-            colors: ['#22c55e', '#16a34a', '#86efac']
-          });
-        }} 
       />
       <main>
         <Hero />
