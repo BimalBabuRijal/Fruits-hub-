@@ -37,7 +37,11 @@ import {
   RefreshCcw,
   Edit2,
   Trash2,
-  X
+  X,
+  User as UserIcon,
+  Lock,
+  Eye,
+  EyeOff
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import confetti from 'canvas-confetti';
@@ -421,7 +425,12 @@ const Navbar = ({ onOpenCart, cartCount, points, user, onSignIn, onSignOut }: {
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-3 bg-gray-50 p-1 pr-4 rounded-full border border-gray-100 group">
                 <img src={user.avatar} alt={user.name} className="w-8 h-8 rounded-full shadow-sm" />
-                <span className="text-[10px] font-black tracking-tight">{user.name}</span>
+                <div className="flex flex-col -gap-1">
+                  <span className="text-[10px] font-black tracking-tight leading-none mb-1">{user.name}</span>
+                  {user.email === OWNER_EMAIL && (
+                    <span className="text-[7px] font-black uppercase tracking-widest text-green-600 leading-none">Founder Admin</span>
+                  )}
+                </div>
               </div>
               <button 
                 onClick={onSignOut}
@@ -840,12 +849,14 @@ const FruitSection = ({
             subtitle="Straight from Nepal's best orchards. No preservatives, no cold storage, just pure nature."
             centered={false}
           />
-          <button 
-            onClick={onReset}
-            className="px-6 py-4 bg-gray-50 text-gray-400 border border-gray-100 rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center gap-2 active:scale-95"
-          >
-            <RefreshCcw size={16} /> Reset All Images
-          </button>
+          {user?.email === OWNER_EMAIL && (
+            <button 
+              onClick={onReset}
+              className="px-6 py-4 bg-gray-50 text-gray-400 border border-gray-100 rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center gap-2 active:scale-95"
+            >
+              <RefreshCcw size={16} /> Reset All Images
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
@@ -870,6 +881,7 @@ const FruitSection = ({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   
+                  {user?.email === OWNER_EMAIL && (
                     <label className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110 z-20 group/cam opacity-0 group-hover:opacity-100">
                       <Camera size={18} className="text-gray-600 group-hover/cam:text-green-600 transition-colors" />
                       <input 
@@ -882,6 +894,7 @@ const FruitSection = ({
                         }}
                       />
                     </label>
+                  )}
 
                   <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-2xl shadow-sm flex items-center gap-1.5 border border-gray-100">
                     <Star size={12} className="fill-orange-400 text-orange-400" />
@@ -2061,18 +2074,20 @@ const RewardsSection = ({
                   {reward.type}
                 </div>
 
-                <label className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110 z-20 opacity-0 group-hover:opacity-100">
-                  <Camera size={18} className="text-gray-600" />
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) onImageUpload(reward.id, file);
-                    }}
-                  />
-                </label>
+                {user?.email === OWNER_EMAIL && (
+                  <label className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110 z-20 opacity-0 group-hover:opacity-100">
+                    <Camera size={18} className="text-gray-600" />
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) onImageUpload(reward.id, file);
+                      }}
+                    />
+                  </label>
+                )}
               </div>
               <div className="p-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{reward.title}</h3>
@@ -2612,6 +2627,194 @@ const Footer = () => {
 };
 
 
+const OWNER_EMAIL = 'kopitebbr@gmail.com';
+
+const AuthModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+  const [isLogin, setIsLogin] = useState(true);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  if (!isOpen) return null;
+
+  const handleSubmit = async (e: FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+    setError(null);
+
+    try {
+      // Small delay for realism
+      await new Promise(resolve => setTimeout(resolve, 800));
+
+      const usersRaw = localStorage.getItem('freshvita_users');
+      const users = usersRaw ? JSON.parse(usersRaw) : [];
+
+      if (isLogin) {
+        const user = users.find((u: any) => u.email === email && u.password === password);
+        if (user) {
+          const { password: _, ...userSafe } = user;
+          localStorage.setItem('freshvita_session', JSON.stringify(userSafe));
+          // Dispatch a custom event to notify App component
+          window.dispatchEvent(new Event('auth-change'));
+        } else {
+          throw new Error('Invalid email or password');
+        }
+      } else {
+        if (users.some((u: any) => u.email === email)) {
+          throw new Error('User already exists');
+        }
+
+        const newUser = {
+          id: Math.random().toString(36).substr(2, 9),
+          name: name,
+          email: email,
+          password: password, // In a real app, this would be hashed
+          points: 100,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`,
+          createdAt: new Date().toISOString()
+        };
+
+        users.push(newUser);
+        localStorage.setItem('freshvita_users', JSON.stringify(users));
+        
+        const { password: _, ...userSafe } = newUser;
+        localStorage.setItem('freshvita_session', JSON.stringify(userSafe));
+        window.dispatchEvent(new Event('auth-change'));
+      }
+      onClose();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <AnimatePresence>
+      <div className="fixed inset-0 z-[200] flex items-center justify-center p-6 text-gray-900">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          onClick={onClose}
+          className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+        />
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9, y: 20 }}
+          animate={{ opacity: 1, scale: 1, y: 0 }}
+          exit={{ opacity: 0, scale: 0.9, y: 20 }}
+          className="bg-white w-full max-w-md rounded-[40px] overflow-hidden relative z-10 shadow-2xl"
+        >
+          <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <div>
+              <h3 className="text-2xl font-black italic tracking-tighter">{isLogin ? 'Welcome Back' : 'Join FreshVita'}</h3>
+              <p className="text-[10px] font-black uppercase tracking-widest text-green-600">
+                {isLogin ? 'Sign in to your health vault' : 'Start your wellness journey'}
+              </p>
+            </div>
+            <button onClick={onClose} className="p-2 hover:bg-gray-200 rounded-xl transition-all">
+              <X size={24} className="text-gray-400" />
+            </button>
+          </div>
+
+          <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-100 rounded-2xl text-[11px] font-bold text-red-600 flex items-center gap-3">
+                <div className="w-2 h-2 bg-red-500 rounded-full shrink-0" />
+                {error}
+              </div>
+            )}
+
+            {!isLogin && (
+              <div className="space-y-1">
+                <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Full Name</label>
+                <div className="relative">
+                  <UserIcon size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" />
+                  <input 
+                    type="text" 
+                    required
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Rahul Sharma"
+                    className="w-full pl-14 pr-6 py-4 bg-gray-100 rounded-[24px] focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-gray-300 font-medium"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Email Address</label>
+              <div className="relative">
+                <Mail size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input 
+                  type="email" 
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="rahul@example.com"
+                  className="w-full pl-14 pr-6 py-4 bg-gray-100 rounded-[24px] focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-gray-300 font-medium"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[10px] font-black uppercase tracking-widest text-gray-400 ml-4">Password</label>
+              <div className="relative">
+                <Lock size={18} className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-400" />
+                <input 
+                  type={showPassword ? 'text' : 'password'} 
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-14 pr-14 py-4 bg-gray-100 rounded-[24px] focus:ring-2 focus:ring-green-500 outline-none transition-all placeholder:text-gray-300 font-medium"
+                />
+                <button 
+                  type="button" 
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-6 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                >
+                  {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                </button>
+              </div>
+            </div>
+
+            <button 
+              type="submit"
+              disabled={loading}
+              className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-black uppercase tracking-widest shadow-xl hover:bg-green-600 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
+            >
+              {loading ? (
+                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : (
+                isLogin ? 'Sign In' : 'Create Account'
+              )}
+            </button>
+
+            <p className="text-center text-sm font-bold text-gray-400">
+              {isLogin ? "Don't have an account? " : "Already have an account? "}
+              <button 
+                type="button"
+                onClick={() => {
+                  setIsLogin(!isLogin);
+                  setError(null);
+                }}
+                className="text-green-600 hover:underline"
+              >
+                {isLogin ? 'Sign Up' : 'Log In'}
+              </button>
+            </p>
+          </form>
+        </motion.div>
+      </div>
+    </AnimatePresence>
+  );
+};
+
+
 // --- Main App ---
 
 const BottomNav = ({ onOpenCart, cartCount, user, onSignIn }: { onOpenCart: () => void, cartCount: number, user: User | null, onSignIn: () => void }) => {
@@ -2681,6 +2884,7 @@ export default function App() {
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
   const [reviewItem, setReviewItem] = useState<{ id: string, name: string } | null>(null);
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [reports, setReports] = useState<Report[]>(() => {
     const saved = localStorage.getItem('freshvita_reports');
     return saved ? JSON.parse(saved) : REPORTS_DATA;
@@ -2712,7 +2916,7 @@ export default function App() {
     reader.readAsDataURL(file);
   };
 
-  const addActivity = (activity: Omit<UserActivity, 'id' | 'date'>) => {
+  const addActivity = async (activity: Omit<UserActivity, 'id' | 'date'>) => {
     const activityData = {
       ...activity,
       id: Math.random().toString(36).substr(2, 9),
@@ -2722,7 +2926,22 @@ export default function App() {
 
     // Earn points on purchase
     if (activity.type === 'Purchase' && activity.points > 0) {
-      setUserPoints(prev => prev + activity.points);
+      const newPoints = userPoints + activity.points;
+      setUserPoints(newPoints);
+      
+      if (currentUser) {
+        const usersRaw = localStorage.getItem('freshvita_users');
+        if (usersRaw) {
+          const users = JSON.parse(usersRaw);
+          const updatedUsers = users.map((u: any) => u.id === currentUser.id ? { ...u, points: newPoints } : u);
+          localStorage.setItem('freshvita_users', JSON.stringify(updatedUsers));
+          
+          // Update current session too
+          const session = { ...currentUser, points: newPoints };
+          localStorage.setItem('freshvita_session', JSON.stringify(session));
+          setCurrentUser(session);
+        }
+      }
     }
   };
 
@@ -2765,9 +2984,30 @@ export default function App() {
     });
   };
 
-  const handleSignOut = async () => {
+  const handleSignOut = () => {
+    localStorage.removeItem('freshvita_session');
     setCurrentUser(null);
+    setUserPoints(0);
+    window.dispatchEvent(new Event('auth-change'));
   };
+
+  useEffect(() => {
+    const handleAuthChange = () => {
+      const sessionRaw = localStorage.getItem('freshvita_session');
+      if (sessionRaw) {
+        const session = JSON.parse(sessionRaw);
+        setCurrentUser(session);
+        setUserPoints(session.points);
+      } else {
+        setCurrentUser(null);
+        setUserPoints(0);
+      }
+    };
+
+    handleAuthChange();
+    window.addEventListener('auth-change', handleAuthChange);
+    return () => window.removeEventListener('auth-change', handleAuthChange);
+  }, []);
 
   const handleRedeemReward = (reward: Reward) => {
     if (userPoints < reward.points) {
@@ -2776,7 +3016,22 @@ export default function App() {
     }
 
     if (window.confirm(`Redeem ${reward.title} for ${reward.points} points?`)) {
-      setUserPoints(prev => prev - reward.points);
+      const newPoints = userPoints - reward.points;
+      setUserPoints(newPoints);
+
+      if (currentUser) {
+        const usersRaw = localStorage.getItem('freshvita_users');
+        if (usersRaw) {
+          const users = JSON.parse(usersRaw);
+          const updatedUsers = users.map((u: any) => u.id === currentUser.id ? { ...u, points: newPoints } : u);
+          localStorage.setItem('freshvita_users', JSON.stringify(updatedUsers));
+          
+          // Update current session too
+          const session = { ...currentUser, points: newPoints };
+          localStorage.setItem('freshvita_session', JSON.stringify(session));
+          setCurrentUser(session);
+        }
+      }
       
       // Track activity
       addActivity({
@@ -2875,8 +3130,12 @@ export default function App() {
         cartCount={cartCount} 
         points={userPoints} 
         user={currentUser}
-        onSignIn={() => {}}
+        onSignIn={() => setIsAuthModalOpen(true)}
         onSignOut={handleSignOut}
+      />
+      <AuthModal 
+        isOpen={isAuthModalOpen} 
+        onClose={() => setIsAuthModalOpen(false)} 
       />
 
       <main>
@@ -2944,7 +3203,7 @@ export default function App() {
         onOpenCart={() => setIsCartOpen(true)} 
         cartCount={cartCount} 
         user={currentUser}
-        onSignIn={() => {}}
+        onSignIn={() => setIsAuthModalOpen(true)}
       />
 
       <AnimatePresence>
