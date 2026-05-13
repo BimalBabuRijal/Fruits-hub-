@@ -317,7 +317,7 @@ const FRUITS_DATA: Fruit[] = [
     description: 'Buttery texture and sweet flavor, rich in digestive enzymes.', 
     price: 110, 
     unit: 'kg', 
-    image: 'https://images.unsplash.com/photo-1517022812141-23620dba5c23?auto=format&fit=crop&q=100&w=1600',
+    image: 'https://drive.google.com/uc?export=view&id=1BGiv7nn7ymfqnQcG9QeqtDKMlOXuBc7t',
     nutrition: {
       calories: 43,
       vitamins: [{ name: 'Vitamin C', value: '75%' }, { name: 'Vitamin A', value: '10%' }],
@@ -4494,19 +4494,6 @@ export default function App() {
     }
   };
 
-  const handleRewardImageUpload = (id: string, file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      setRewards(prev => {
-        const updated = prev.map(r => r.id === id ? { ...r, image: base64 } : r);
-        localStorage.setItem('freshvita_rewards', JSON.stringify(updated));
-        return updated;
-      });
-    };
-    reader.readAsDataURL(file);
-  };
-
   const handleQRUpload = (file: File) => {
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -4625,19 +4612,6 @@ export default function App() {
       origin: { y: 0.6 },
       colors: ['#16a34a', '#ffffff']
     });
-  };
-
-  const handleImageUpload = (id: string, file: File) => {
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      const base64 = e.target?.result as string;
-      setFruits(prev => {
-        const updated = prev.map(f => f.id === id ? { ...f, image: base64 } : f);
-        return updated;
-      });
-      setHasPendingChanges(true);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleImageUrlChange = (type: 'fruit' | 'reward' | 'voucher', id: string, url: string) => {
