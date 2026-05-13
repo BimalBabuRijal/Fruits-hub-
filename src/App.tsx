@@ -129,7 +129,7 @@ interface Reward {
 
 interface UserActivity {
   id: string;
-  type: 'Purchase' | 'Redemption';
+  type: 'Purchase' | 'Redemption' | 'Review';
   title: string;
   amount: number;
   points: number;
@@ -340,21 +340,49 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }: { isOpen: boolean, onClos
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
-    // Simulate auth
-    const mockUser: User = {
-      id: Math.random().toString(36).substr(2, 9),
-      name: mode === 'signin' ? (email.split('@')[0]) : name,
-      email: email,
-      points: mode === 'signin' ? 1250 : 0,
-      avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
-    };
-    onAuthSuccess(mockUser);
-    onClose();
+    setError(null);
+    
+    // Simple localStorage based auth for demonstration
+    const savedUsers = localStorage.getItem('freshvita_users');
+    const users: User[] = savedUsers ? JSON.parse(savedUsers) : [];
+
+    if (mode === 'signup') {
+      if (users.find(u => u.email === email)) {
+        setError('User already exists');
+        return;
+      }
+      const newUser: User = {
+        id: Math.random().toString(36).substr(2, 9),
+        name: name,
+        email: email,
+        points: 100, // Welcome points
+        avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=${email}`
+      };
+      localStorage.setItem('freshvita_users', JSON.stringify([...users, newUser]));
+      onAuthSuccess(newUser);
+      onClose();
+    } else {
+      const existingUser = users.find(u => u.email === email);
+      if (existingUser || email === 'kopitebbr@gmail.com') {
+        const user = existingUser || {
+          id: 'owner',
+          name: 'Owner',
+          email: 'kopitebbr@gmail.com',
+          points: 5000,
+          avatar: `https://api.dicebear.com/7.x/avataaars/svg?seed=owner`
+        };
+        onAuthSuccess(user as User);
+        onClose();
+      } else {
+        setError('Invalid credentials');
+      }
+    }
   };
 
   return (
@@ -388,6 +416,11 @@ const AuthModal = ({ isOpen, onClose, onAuthSuccess }: { isOpen: boolean, onClos
           </div>
 
           <form onSubmit={handleSubmit} className="p-8 space-y-6">
+            {error && (
+              <div className="bg-red-50 text-red-600 p-4 rounded-2xl text-xs font-bold border border-red-100">
+                {error}
+              </div>
+            )}
             <div className="flex bg-gray-50 p-1 rounded-2xl mb-4">
               <button 
                 type="button"
@@ -763,9 +796,11 @@ const ReviewSubmissionModal = ({ isOpen, item, onClose, onSubmit }: {
   );
 };
 
-const FruitSection = ({ fruits, onImageUpload, onReset, onAddToCart, reviews, onRate }: { fruits: Fruit[], onImageUpload: (id: string, file: File) => void, onReset: () => void, onAddToCart: (fruit: Fruit, direct?: boolean) => void, reviews: Review[], onRate: (id: string, name: string) => void }) => {
+const FruitSection = ({ fruits, onImageUpload, onReset, onAddToCart, reviews, onRate, user }: { fruits: Fruit[], onImageUpload: (id: string, file: File) => void, onReset: () => void, onAddToCart: (fruit: Fruit, direct?: boolean) => void, reviews: Review[], onRate: (id: string, name: string) => void, user: User | null }) => {
   const [showAll, setShowAll] = useState(false);
   const displayedFruits = showAll ? fruits : fruits.slice(0, 6);
+
+  const isOwner = user?.email === 'kopitebbr@gmail.com';
 
   const hasChanges = JSON.stringify(fruits) !== JSON.stringify(FRUITS_DATA);
 
@@ -812,20 +847,22 @@ const FruitSection = ({ fruits, onImageUpload, onReset, onAddToCart, reviews, on
                     </button>
                   </div>
 
-                  {/* Upload Button */}
-                <label className="absolute top-4 right-4 bg-white/95 backdrop-blur shadow-xl p-3 rounded-2xl cursor-pointer hover:bg-green-600 hover:text-white transition-all z-20 active:scale-90 border border-gray-100 group-hover:scale-110 flex items-center gap-2 group/label">
-                  <Camera size={18} />
-                  <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/label:block overflow-hidden transition-all whitespace-nowrap">Upload</span>
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) onImageUpload(fruit.id, file);
-                    }}
-                  />
-                </label>
+                  {/* Upload Button - Only for Owner */}
+                {isOwner && (
+                  <label className="absolute top-4 right-4 bg-white/95 backdrop-blur shadow-xl p-3 rounded-2xl cursor-pointer hover:bg-green-600 hover:text-white transition-all z-20 active:scale-90 border border-gray-100 group-hover:scale-110 flex items-center gap-2 group/label">
+                    <Camera size={18} />
+                    <span className="text-[9px] font-black uppercase tracking-widest hidden group-hover/label:block overflow-hidden transition-all whitespace-nowrap">Upload</span>
+                    <input 
+                      type="file" 
+                      className="hidden" 
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) onImageUpload(fruit.id, file);
+                      }}
+                    />
+                  </label>
+                )}
 
                 <button 
                   onClick={() => onAddToCart(fruit)}
@@ -866,7 +903,7 @@ const FruitSection = ({ fruits, onImageUpload, onReset, onAddToCart, reviews, on
             {showAll ? 'Show less' : 'View full menu'} <ArrowRight size={18} className={showAll ? '-rotate-90' : 'rotate-0'} />
           </button>
 
-          {hasChanges && (
+          {hasChanges && isOwner && (
             <button 
               onClick={onReset}
               className="text-[10px] font-black text-gray-400 hover:text-red-500 transition-colors uppercase tracking-[0.2em] bg-gray-50 px-4 py-2 rounded-full border border-gray-100 hover:border-red-100 hover:bg-red-50/30"
@@ -891,6 +928,7 @@ const CartSidebar = ({
   paymentQR,
   onQRUpload,
   onAddActivity,
+  user,
   autoCheckout = false
 }: { 
   cart: CartItem[], 
@@ -903,12 +941,15 @@ const CartSidebar = ({
   paymentQR: string,
   onQRUpload: (file: File) => void,
   onAddActivity: (activity: Omit<UserActivity, 'id' | 'date'>) => void,
+  user: User | null,
   autoCheckout?: boolean
 }) => {
   const [currentStep, setCurrentStep] = useState(0); // 0: Basket, 1: Delivery, 2: Payment
   const [isOrdered, setIsOrdered] = useState(false);
   const [showTracking, setShowTracking] = useState(false);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+
+  const isOwner = user?.email === 'kopitebbr@gmail.com';
 
   // Simulated Locations (Kathmandu)
   const [customerLocation] = useState({ lat: 27.7120, lng: 85.3131 });
@@ -1365,23 +1406,24 @@ const CartSidebar = ({
                       </div>
                     )}
 
-                    {/* Admin Upload Overlay */}
-                    <label className="absolute inset-0 cursor-pointer bg-black/0 hover:bg-black/5 flex flex-col items-center justify-center transition-all opacity-0 hover:opacity-100 backdrop-blur-[2px]">
-                      <div className="bg-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-900 border border-gray-100 scale-90 group-hover/qr:scale-100 transition-transform">
-                        <Camera size={16} className="text-green-600" /> 
-                        {paymentQR ? 'Update Company QR' : 'Upload QR Code'}
-                      </div>
-                      <input 
-                        type="file" 
-                        accept="image/*" 
-                        className="hidden" 
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) onQRUpload(file);
-                        }}
-                      />
-                      <p className="mt-4 text-[9px] text-white/90 font-black uppercase tracking-tighter bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-md">Admin Only Control</p>
-                    </label>
+                    {isOwner && (
+                      <label className="absolute inset-0 cursor-pointer bg-black/0 hover:bg-black/5 flex flex-col items-center justify-center transition-all opacity-0 hover:opacity-100 backdrop-blur-[2px]">
+                        <div className="bg-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-900 border border-gray-100 scale-90 group-hover/qr:scale-100 transition-transform">
+                          <Camera size={16} className="text-green-600" /> 
+                          {paymentQR ? 'Update Company QR' : 'Upload QR Code'}
+                        </div>
+                        <input 
+                          type="file" 
+                          accept="image/*" 
+                          className="hidden" 
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) onQRUpload(file);
+                          }}
+                        />
+                        <p className="mt-4 text-[9px] text-white/90 font-black uppercase tracking-tighter bg-black/40 px-3 py-1.5 rounded-full backdrop-blur-md">Admin Only Control</p>
+                      </label>
+                    )}
                   </div>
                 </div>
               )}
@@ -1887,13 +1929,16 @@ const RewardsSection = ({
   rewards, 
   points, 
   onRedeem, 
-  onImageUpload 
+  onImageUpload,
+  user
 }: { 
   rewards: Reward[], 
   points: number, 
   onRedeem: (reward: Reward) => void,
-  onImageUpload: (id: string, file: File) => void
+  onImageUpload: (id: string, file: File) => void,
+  user: User | null
 }) => {
+  const isOwner = user?.email === 'kopitebbr@gmail.com';
   return (
     <section id="rewards" className="py-24 bg-gray-50 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
@@ -1931,19 +1976,21 @@ const RewardsSection = ({
                   {reward.type}
                 </div>
                 
-                {/* Image Upload Trigger */}
-                <label className="absolute bottom-4 right-4 bg-white/90 hover:bg-white p-2 rounded-xl border border-gray-100 cursor-pointer shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Camera size={16} className="text-gray-600" />
-                  <input 
-                    type="file" 
-                    accept="image/*" 
-                    className="hidden" 
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      if (file) onImageUpload(reward.id, file);
-                    }}
-                  />
-                </label>
+                {/* Image Upload Trigger - Owner Only */}
+                {isOwner && (
+                  <label className="absolute bottom-4 right-4 bg-white/90 hover:bg-white p-2 rounded-xl border border-gray-100 cursor-pointer shadow-lg opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera size={16} className="text-gray-600" />
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) onImageUpload(reward.id, file);
+                      }}
+                    />
+                  </label>
+                )}
               </div>
               <div className="p-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{reward.title}</h3>
@@ -2446,6 +2493,7 @@ const Footer = () => {
             <ul className="space-y-5 text-gray-500 font-medium">
               <li><a href="#" className="hover:text-green-600 transition-colors">Our Farms</a></li>
               <li><a href="#" className="hover:text-green-600 transition-colors">Certified Labs</a></li>
+              <li><a href="https://freshvita.vercel.app" className="hover:text-green-600 transition-colors">Vercel App</a></li>
               <li><a href="mailto:kopitebbr@gmail.com" className="hover:text-green-600 transition-colors">Contact Founder</a></li>
               <li><a href="mailto:kopitebbr@gmail.com" className="hover:text-green-600 transition-colors">Support</a></li>
             </ul>
@@ -2838,6 +2886,7 @@ export default function App() {
             setReviewItem({ id, name });
             setIsReviewModalOpen(true);
           }}
+          user={currentUser}
         />
         <FitnessSection onAddToCart={addToCart} />
         <CheckupsSection 
@@ -2854,6 +2903,7 @@ export default function App() {
           points={userPoints} 
           onRedeem={handleRedeemReward}
           onImageUpload={handleRewardImageUpload}
+          user={currentUser}
         />
         <ActivitySection 
           activities={activities} 
@@ -2913,6 +2963,7 @@ export default function App() {
               paymentQR={paymentQR}
               onQRUpload={handleQRUpload}
               onAddActivity={addActivity}
+              user={currentUser}
               autoCheckout={shouldAutoCheckout}
             />
           </>
