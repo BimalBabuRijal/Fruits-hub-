@@ -719,6 +719,11 @@ const Navbar = ({
                 placeholder="Search fruits..."
                 value={searchQuery}
                 onChange={(e) => onSearchChange(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') {
+                    document.getElementById('fruits')?.scrollIntoView({ behavior: 'smooth' });
+                  }
+                }}
                 className="ml-3 bg-transparent border-none outline-none text-sm font-medium text-gray-900 w-full placeholder:text-gray-300"
                 onFocus={() => setIsSearchExpanded(true)}
               />
@@ -3479,7 +3484,15 @@ const HealthTipsSection = () => {
   );
 };
 
-const Hero = () => {
+const Hero = ({ onSearchChange, searchQuery }: { onSearchChange: (q: string) => void, searchQuery: string }) => {
+  const [localSearch, setLocalSearch] = useState(searchQuery);
+
+  const handleSearch = (e: FormEvent) => {
+    e.preventDefault();
+    onSearchChange(localSearch);
+    document.getElementById('fruits')?.scrollIntoView({ behavior: 'smooth' });
+  };
+
   return (
     <section className="relative pt-32 pb-20 md:pt-48 md:pb-32 overflow-hidden" id="home">
       {/* Background blobs for visual interest */}
@@ -3505,20 +3518,63 @@ const Hero = () => {
             <span className="text-green-600 block sm:inline italic">Live well.</span><br />
             Delivered home.
           </h1>
-          <p className="text-xl text-gray-600 leading-relaxed max-w-lg mb-8">
+          <p className="text-xl text-gray-600 leading-relaxed max-w-lg mb-10">
             Hand-picked fruits, at-home medical checkups, and instant lab reports — one app for your whole wellness routine.
           </p>
           
-          <div className="mb-12">
-            <DeliveryChecker />
+          <div className="mb-12 space-y-6">
+            <div className="relative max-w-lg group">
+              <form onSubmit={handleSearch} className="flex flex-col sm:flex-row gap-3 p-2 bg-white rounded-[32px] shadow-2xl shadow-green-100 border border-gray-100 focus-within:border-green-500 transition-all">
+                <div className="flex-grow flex items-center px-4 relative">
+                  <Search size={22} className="text-gray-400 mr-3" />
+                  <input 
+                    type="text" 
+                    placeholder="Search for apples, mangoes, or vitamins..."
+                    value={localSearch}
+                    onChange={(e) => setLocalSearch(e.target.value)}
+                    className="w-full bg-transparent py-4 text-gray-900 font-bold placeholder:text-gray-300 outline-none pr-10"
+                  />
+                  {localSearch && (
+                    <button 
+                      type="button"
+                      onClick={() => { setLocalSearch(''); onSearchChange(''); }}
+                      className="absolute right-2 p-2 hover:bg-gray-100 rounded-full transition-colors"
+                    >
+                      <X size={16} className="text-gray-400" />
+                    </button>
+                  )}
+                </div>
+                <button 
+                  type="submit"
+                  className="bg-gray-900 text-white px-8 py-4 rounded-[24px] font-black uppercase tracking-widest hover:bg-green-600 transition-all flex items-center justify-center gap-2"
+                >
+                  Search
+                </button>
+              </form>
+              <div className="absolute -bottom-8 left-6 flex items-center gap-4">
+                <p className="text-[10px] font-black uppercase tracking-widest text-gray-400">Trending:</p>
+                <div className="flex gap-3">
+                  {['Mustang Apple', 'Alphonso', 'Kiwi'].map(tag => (
+                    <button 
+                      key={tag}
+                      onClick={() => { setLocalSearch(tag); onSearchChange(tag); document.getElementById('fruits')?.scrollIntoView({ behavior: 'smooth' }); }}
+                      className="text-[10px] font-bold text-green-600 hover:underline"
+                    >
+                      {tag}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+            
+            <div className="pt-4">
+              <DeliveryChecker />
+            </div>
           </div>
 
           <div className="flex flex-col sm:flex-row gap-5">
-            <a href="#fruits" className="bg-green-600 text-white px-10 py-5 rounded-3xl font-bold text-lg hover:bg-green-700 transition-all flex items-center justify-center gap-2 shadow-2xl shadow-green-200 group">
-              Shop fruits <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
-            </a>
-            <a href="#checkups" className="bg-white text-gray-900 border-2 border-gray-100 px-10 py-5 rounded-3xl font-bold text-lg hover:bg-gray-50 transition-all flex items-center justify-center gap-2 shadow-sm">
-              Book a test <Stethoscope size={22} className="text-green-600" />
+            <a href="#fruits" className="bg-green-600/10 text-green-700 px-10 py-5 rounded-3xl font-bold text-lg hover:bg-green-600 hover:text-white transition-all flex items-center justify-center gap-2 group">
+              Browse All <ArrowRight size={22} className="group-hover:translate-x-1 transition-transform" />
             </a>
           </div>
           
@@ -4588,7 +4644,7 @@ export default function App() {
       />
 
       <main>
-        <Hero />
+        <Hero searchQuery={searchQuery} onSearchChange={setSearchQuery} />
         <HealthTipsSection />
         <SubscriptionsSection onSelect={handleSubscribe} />
         <FruitSection 
