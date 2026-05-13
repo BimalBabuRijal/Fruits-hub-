@@ -238,9 +238,9 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
 ];
 
 const VOUCHER_TEMPLATES = [
-  { amount: 500, price: 475, label: 'Starter Gift' },
-  { amount: 1000, price: 950, label: 'Value Pack' },
-  { amount: 2500, price: 2300, label: 'Premium Harvest' },
+  { amount: 500, price: 475, label: 'Starter Gift', image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq' },
+  { amount: 1000, price: 950, label: 'Value Pack', image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq' },
+  { amount: 2500, price: 2300, label: 'Premium Harvest', image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq' },
 ];
 
 interface HealthTip {
@@ -381,7 +381,7 @@ const FRUITS_DATA: Fruit[] = [
     description: 'Juicy summer treat from the Tarai plains.', 
     price: 65, 
     unit: 'kg', 
-    image: 'https://images.unsplash.com/photo-1589927986089-35812388d1f4?auto=format&fit=crop&q=100&w=1600',
+    image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq',
     nutrition: {
       calories: 30,
       vitamins: [{ name: 'Vitamin C', value: '13%' }, { name: 'Vitamin A', value: '11%' }],
@@ -511,9 +511,9 @@ const REPORTS_DATA: Report[] = [
 ];
 
 const REWARDS_DATA: Reward[] = [
-  { id: '1', title: 'Free Fruit Basket', points: 5000, image: 'https://images.unsplash.com/photo-1543158181-e6f9f670c5b5?auto=format&fit=crop&q=90&w=1200', type: 'Gift Hamper' },
-  { id: '2', title: 'Full Body Checkup', points: 10000, image: 'https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?auto=format&fit=crop&q=90&w=1200', type: 'Voucher' },
-  { id: '3', title: 'Wellness Coach Call', points: 3500, image: 'https://images.unsplash.com/photo-1522202176988-66273c2fd55f?auto=format&fit=crop&q=90&w=1200', type: 'Voucher' },
+  { id: '1', title: 'Free Fruit Basket', points: 5000, image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq', type: 'Gift Hamper' },
+  { id: '2', title: 'Full Body Checkup', points: 10000, image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq', type: 'Voucher' },
+  { id: '3', title: 'Wellness Coach Call', points: 3500, image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq', type: 'Voucher' },
 ];
 
 const API_KEY =
@@ -2488,8 +2488,8 @@ const GiftVoucherSection = ({
                   className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-[32px] flex items-center justify-between hover:bg-white hover:border-white transition-all group/v"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-green-600 rounded-2xl flex items-center justify-center text-white shadow-lg">
-                      <CreditCard size={20} />
+                    <div className="w-12 h-12 bg-green-600 rounded-2xl flex items-center justify-center text-white shadow-lg overflow-hidden">
+                      {v.image ? <img src={v.image} alt={v.label} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <CreditCard size={20} />}
                     </div>
                     <div className="text-left">
                       <p className="text-xs font-black text-white group-hover:text-gray-900 leading-tight">{v.label}</p>
@@ -4253,8 +4253,8 @@ const handlePurchase = () => {
 
 export default function App() {
   const [fruits, setFruits] = useState<Fruit[]>(() => {
-    const saved = localStorage.getItem('freshvita_fruits');
-    return saved ? JSON.parse(saved) : FRUITS_DATA;
+    localStorage.removeItem('freshvita_fruits');
+    return FRUITS_DATA;
   });
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
@@ -4262,12 +4262,12 @@ export default function App() {
   const [selectedZoneId, setSelectedZoneId] = useState(DELIVERY_ZONES[0].id);
   const [userPoints, setUserPoints] = useState(100);
   const [rewards, setRewards] = useState<Reward[]>(() => {
-    const saved = localStorage.getItem('freshvita_rewards');
-    return saved ? JSON.parse(saved) : REWARDS_DATA;
+    localStorage.removeItem('freshvita_rewards');
+    return REWARDS_DATA;
   });
   const [voucherTemplates, setVoucherTemplates] = useState(() => {
-    const saved = localStorage.getItem('freshvita_voucher_templates');
-    return saved ? JSON.parse(saved) : VOUCHER_TEMPLATES;
+    localStorage.removeItem('freshvita_voucher_templates');
+    return VOUCHER_TEMPLATES;
   });
   const [paymentQR, setPaymentQR] = useState('');
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
