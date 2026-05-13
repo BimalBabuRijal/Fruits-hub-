@@ -1246,7 +1246,7 @@ const AnimatedFruitBg = ({ type }: { type: Fruit['type'] }) => {
 
 const FruitSection = ({ 
   fruits, 
-  onImageUpload, 
+  onImageUrlChange, 
   onReset, 
   onClearAll,
   onAddFruit,
@@ -1260,7 +1260,7 @@ const FruitSection = ({
   onViewNutrition
 }: { 
   fruits: Fruit[], 
-  onImageUpload: (id: string, file: File) => void, 
+  onImageUrlChange: (id: string, url: string) => void, 
   onReset: () => void,
   onClearAll: () => void,
   onAddFruit: () => void,
@@ -1404,18 +1404,16 @@ const FruitSection = ({
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     
                     {user?.email === OWNER_EMAIL && (
-                      <label className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110 z-20 group/cam opacity-0 group-hover:opacity-100">
+                      <button 
+                        onClick={() => {
+                          const url = window.prompt("Enter new Image URL:");
+                          if (url) onImageUrlChange(fruit.id, url);
+                        }}
+                        className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110 z-20 group/cam opacity-0 group-hover:opacity-100"
+                        title="Change Image via URL"
+                      >
                         <Camera size={18} className="text-gray-600 group-hover/cam:text-green-600 transition-colors" />
-                        <input 
-                          type="file" 
-                          accept="image/*" 
-                          className="hidden" 
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) onImageUpload(fruit.id, file);
-                          }}
-                        />
-                      </label>
+                      </button>
                     )}
 
                     <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-2xl shadow-sm flex items-center gap-1.5 border border-gray-100">
@@ -2437,6 +2435,7 @@ const GiftVoucherSection = ({
   onReset,
   onClearAll,
   onAdd,
+  onImageUrlChange,
   user
 }: { 
   templates: any[],
@@ -2444,6 +2443,7 @@ const GiftVoucherSection = ({
   onReset: () => void,
   onClearAll: () => void,
   onAdd: () => void,
+  onImageUrlChange: (id: string, url: string) => void,
   user: User | null
 }) => {
   return (
@@ -2488,8 +2488,21 @@ const GiftVoucherSection = ({
                   className="bg-white/5 backdrop-blur-md border border-white/10 p-6 rounded-[32px] flex items-center justify-between hover:bg-white hover:border-white transition-all group/v"
                 >
                   <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-green-600 rounded-2xl flex items-center justify-center text-white shadow-lg overflow-hidden">
+                    <div className="w-12 h-12 bg-green-600 rounded-2xl flex items-center justify-center text-white shadow-lg overflow-hidden relative group/voucherimg">
                       {v.image ? <img src={v.image} alt={v.label} className="w-full h-full object-cover" referrerPolicy="no-referrer" /> : <CreditCard size={20} />}
+                      {user?.email === OWNER_EMAIL && (
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            const url = window.prompt("Enter new Image URL:");
+                            if (url) onImageUrlChange(i.toString(), url);
+                          }}
+                          className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/voucherimg:opacity-100 transition-opacity"
+                          title="Change Image via URL"
+                        >
+                          <Camera size={14} className="text-white" />
+                        </button>
+                      )}
                     </div>
                     <div className="text-left">
                       <p className="text-xs font-black text-white group-hover:text-gray-900 leading-tight">{v.label}</p>
@@ -2911,7 +2924,7 @@ const RewardsSection = ({
   rewards, 
   points, 
   onRedeem, 
-  onImageUpload,
+  onImageUrlChange,
   onReset,
   onClearAll,
   onAdd,
@@ -2920,7 +2933,7 @@ const RewardsSection = ({
   rewards: Reward[], 
   points: number, 
   onRedeem: (reward: Reward) => void,
-  onImageUpload: (id: string, file: File) => void,
+  onImageUrlChange: (id: string, url: string) => void,
   onReset: () => void,
   onClearAll: () => void,
   onAdd: () => void,
@@ -2989,18 +3002,16 @@ const RewardsSection = ({
                 </div>
 
                 {user?.email === OWNER_EMAIL && (
-                  <label className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110 z-20 opacity-0 group-hover:opacity-100">
+                  <button 
+                    onClick={() => {
+                      const url = window.prompt("Enter new Image URL:");
+                      if (url) onImageUrlChange(reward.id, url);
+                    }}
+                    className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110 z-20 opacity-0 group-hover:opacity-100"
+                    title="Change Image via URL"
+                  >
                     <Camera size={18} className="text-gray-600" />
-                    <input 
-                      type="file" 
-                      accept="image/*" 
-                      className="hidden" 
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) onImageUpload(reward.id, file);
-                      }}
-                    />
-                  </label>
+                  </button>
                 )}
               </div>
               <div className="p-8">
@@ -4289,6 +4300,8 @@ export default function App() {
   });
   const [activities, setActivities] = useState<UserActivity[]>([]);
   const [selectedFruitNutrition, setSelectedFruitNutrition] = useState<Fruit | null>(null);
+  const [hasPendingChanges, setHasPendingChanges] = useState(false);
+
   const [suggestions, setSuggestions] = useState<Suggestion[]>(() => {
     const saved = localStorage.getItem('freshvita_suggestions');
     return saved ? JSON.parse(saved) : [];
@@ -4620,12 +4633,30 @@ export default function App() {
       const base64 = e.target?.result as string;
       setFruits(prev => {
         const updated = prev.map(f => f.id === id ? { ...f, image: base64 } : f);
-        localStorage.setItem('freshvita_fruits', JSON.stringify(updated));
-        saveToServer('fruits', updated);
         return updated;
       });
+      setHasPendingChanges(true);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleImageUrlChange = (type: 'fruit' | 'reward' | 'voucher', id: string, url: string) => {
+    if (type === 'fruit') {
+      setFruits(prev => prev.map(f => f.id === id ? { ...f, image: url } : f));
+    } else if (type === 'reward') {
+      setRewards(prev => prev.map(r => r.id === id ? { ...r, image: url } : r));
+    } else if (type === 'voucher') {
+      setVoucherTemplates(prev => prev.map((v, i) => i.toString() === id ? { ...v, image: url } : v));
+    }
+    setHasPendingChanges(true);
+  };
+
+  const saveAllPendingImageChanges = async () => {
+    await saveToServer('fruits', fruits);
+    await saveToServer('rewards', rewards);
+    await saveToServer('vouchers', voucherTemplates);
+    setHasPendingChanges(false);
+    notify('Changes Saved', 'All your image changes have been permanently saved to the database.', 'system');
   };
 
   const handleImageReset = () => {
@@ -4854,6 +4885,22 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 selection:bg-green-100 selection:text-green-900 pb-16 md:pb-0">
+      {currentUser?.email === OWNER_EMAIL && hasPendingChanges && (
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="fixed bottom-24 right-6 z-50 flex items-center justify-center p-2"
+        >
+          <button 
+            onClick={saveAllPendingImageChanges}
+            className="flex items-center gap-3 px-6 py-4 bg-gray-900 text-white rounded-full shadow-2xl hover:scale-105 active:scale-95 transition-all outline outline-4 outline-green-400"
+          >
+            <div className="w-2 h-2 rounded-full bg-green-400 animate-pulse" />
+            <span className="text-sm font-black uppercase tracking-widest">Save Image Changes</span>
+          </button>
+        </motion.div>
+      )}
+
       <Navbar 
         onOpenCart={() => setIsCartOpen(true)} 
         cartCount={cartCount} 
@@ -4890,7 +4937,7 @@ export default function App() {
         <SubscriptionsSection onSelect={handleSubscribe} />
         <FruitSection 
           fruits={filteredFruits} 
-          onImageUpload={handleImageUpload} 
+          onImageUrlChange={(id, url) => handleImageUrlChange('fruit', id, url)} 
           onReset={handleImageReset}
           onClearAll={handleClearAllFruits}
           onAddFruit={handleAddFruit}
@@ -4912,6 +4959,7 @@ export default function App() {
           onReset={handleResetVoucherTemplates}
           onClearAll={handleClearAllVoucherTemplates}
           onAdd={handleAddVoucherTemplate}
+          onImageUrlChange={(id, url) => handleImageUrlChange('voucher', id, url)}
           user={currentUser}
         />
         <FitnessSection onAddToCart={addToCart} />
@@ -4931,7 +4979,7 @@ export default function App() {
           rewards={rewards} 
           points={userPoints} 
           onRedeem={handleRedeemReward}
-          onImageUpload={handleRewardImageUpload}
+          onImageUrlChange={(id, url) => handleImageUrlChange('reward', id, url)}
           onReset={handleResetRewards}
           onClearAll={handleClearAllRewards}
           onAdd={handleAddReward}
