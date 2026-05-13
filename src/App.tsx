@@ -339,7 +339,11 @@ const DeliveryTrackingMap = ({ customerLocation, riderLocation }: {
   );
 };
 
-const AuthModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }) => {
+const AuthModal = ({ isOpen, onClose, onSignInAsOwner }: { 
+  isOpen: boolean, 
+  onClose: () => void,
+  onSignInAsOwner: () => void
+}) => {
   if (!isOpen) return null;
 
   return (
@@ -374,14 +378,17 @@ const AuthModal = ({ isOpen, onClose }: { isOpen: boolean, onClose: () => void }
 
           <div className="p-8 space-y-6">
             <p className="text-sm text-gray-500 leading-relaxed text-center">
-              Login is currently disabled. You can still browse our fresh fruits and health packages locally!
+              Click below to enter <strong>Owner Mode</strong> and manage your catalog images.
             </p>
 
             <button 
-              onClick={onClose}
+              onClick={() => {
+                onClose();
+                onSignInAsOwner();
+              }}
               className="w-full py-5 bg-gray-900 text-white rounded-[32px] font-black uppercase tracking-widest shadow-xl hover:bg-green-600 transition-all active:scale-95 flex items-center justify-center gap-4"
             >
-              Continue Browsing
+              Sign In as Owner
             </button>
 
             <p className="text-[9px] text-center text-gray-400 font-bold uppercase tracking-[0.2em] px-4">
@@ -847,6 +854,8 @@ const AnimatedFruitBg = ({ type }: { type: Fruit['type'] }) => {
   }
 };
 
+const OWNER_EMAIL = 'kopitebbr@gmail.com';
+
 const FruitSection = ({ 
   fruits, 
   onImageUpload, 
@@ -864,6 +873,8 @@ const FruitSection = ({
   onRate: (id: string, name: string) => void,
   user: User | null
 }) => {
+  const isOwner = user?.email === OWNER_EMAIL;
+
   return (
     <section id="fruits" className="py-24 bg-white overflow-hidden scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">
@@ -875,6 +886,14 @@ const FruitSection = ({
             subtitle="Straight from Nepal's best orchards. No preservatives, no cold storage, just pure nature."
             centered={false}
           />
+          {isOwner && (
+            <button 
+              onClick={onReset}
+              className="px-6 py-4 bg-gray-50 text-gray-400 border border-gray-100 rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-gray-100 transition-all flex items-center gap-2 active:scale-95"
+            >
+              <RefreshCcw size={16} /> Reset All Images
+            </button>
+          )}
         </div>
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-8">
@@ -899,6 +918,21 @@ const FruitSection = ({
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                   
+                  {isOwner && (
+                    <label className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110 z-20 group/cam opacity-0 group-hover:opacity-100">
+                      <Camera size={18} className="text-gray-600 group-hover/cam:text-green-600 transition-colors" />
+                      <input 
+                        type="file" 
+                        accept="image/*" 
+                        className="hidden" 
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          if (file) onImageUpload(fruit.id, file);
+                        }}
+                      />
+                    </label>
+                  )}
+
                   <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-2xl shadow-sm flex items-center gap-1.5 border border-gray-100">
                     <Star size={12} className="fill-orange-400 text-orange-400" />
                     <span className="text-[10px] font-black">{avgRating > 0 ? avgRating.toFixed(1) : 'New'}</span>
@@ -1933,6 +1967,8 @@ const RewardsSection = ({
   onImageUpload: (id: string, file: File) => void,
   user: User | null
 }) => {
+  const isOwner = user?.email === OWNER_EMAIL;
+
   return (
     <section id="rewards" className="py-24 bg-gray-50 overflow-hidden scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">
@@ -1971,6 +2007,21 @@ const RewardsSection = ({
                 <div className="absolute top-4 left-4 bg-white/90 backdrop-blur px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest text-green-600 border border-green-100">
                   {reward.type}
                 </div>
+
+                {isOwner && (
+                  <label className="absolute top-4 right-4 p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110 z-20 opacity-0 group-hover:opacity-100">
+                    <Camera size={18} className="text-gray-600" />
+                    <input 
+                      type="file" 
+                      accept="image/*" 
+                      className="hidden" 
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) onImageUpload(reward.id, file);
+                      }}
+                    />
+                  </label>
+                )}
               </div>
               <div className="p-8">
                 <h3 className="text-xl font-bold text-gray-900 mb-2">{reward.title}</h3>
@@ -2561,13 +2612,19 @@ const handlePurchase = () => {
 };
 
 export default function App() {
-  const [fruits, setFruits] = useState<Fruit[]>(FRUITS_DATA);
+  const [fruits, setFruits] = useState<Fruit[]>(() => {
+    const saved = localStorage.getItem('freshvita_fruits');
+    return saved ? JSON.parse(saved) : FRUITS_DATA;
+  });
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [shouldAutoCheckout, setShouldAutoCheckout] = useState(false);
   const [selectedZoneId, setSelectedZoneId] = useState(DELIVERY_ZONES[0].id);
   const [userPoints, setUserPoints] = useState(100);
-  const [rewards, setRewards] = useState<Reward[]>(REWARDS_DATA);
+  const [rewards, setRewards] = useState<Reward[]>(() => {
+    const saved = localStorage.getItem('freshvita_rewards');
+    return saved ? JSON.parse(saved) : REWARDS_DATA;
+  });
   const [paymentQR, setPaymentQR] = useState('');
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -2596,7 +2653,11 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
-      setRewards(prev => prev.map(r => r.id === id ? { ...r, image: base64 } : r));
+      setRewards(prev => {
+        const updated = prev.map(r => r.id === id ? { ...r, image: base64 } : r);
+        localStorage.setItem('freshvita_rewards', JSON.stringify(updated));
+        return updated;
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -2625,6 +2686,17 @@ export default function App() {
       amount: 0,
       points: 50 // Reward for review
     });
+  };
+
+  const handleSignInAsOwner = () => {
+    setCurrentUser({
+      id: 'owner',
+      name: 'Owner (FreshVita)',
+      email: OWNER_EMAIL,
+      points: 99999,
+      avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=owner'
+    });
+    setUserPoints(99999);
   };
 
   const handleRedeemReward = (reward: Reward) => {
@@ -2658,7 +2730,11 @@ export default function App() {
     const reader = new FileReader();
     reader.onload = (e) => {
       const base64 = e.target?.result as string;
-      setFruits(prev => prev.map(f => f.id === id ? { ...f, image: base64 } : f));
+      setFruits(prev => {
+        const updated = prev.map(f => f.id === id ? { ...f, image: base64 } : f);
+        localStorage.setItem('freshvita_fruits', JSON.stringify(updated));
+        return updated;
+      });
     };
     reader.readAsDataURL(file);
   };
@@ -2666,6 +2742,7 @@ export default function App() {
   const handleImageReset = () => {
     if (window.confirm('Revert all fruit images to farm defaults?')) {
       setFruits(FRUITS_DATA);
+      localStorage.removeItem('freshvita_fruits');
     }
   };
 
@@ -2733,6 +2810,7 @@ export default function App() {
       <AuthModal 
         isOpen={isAuthModalOpen} 
         onClose={() => setIsAuthModalOpen(false)} 
+        onSignInAsOwner={handleSignInAsOwner}
       />
 
       <main>
