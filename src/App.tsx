@@ -317,7 +317,7 @@ const FRUITS_DATA: Fruit[] = [
     description: 'Buttery texture and sweet flavor, rich in digestive enzymes.', 
     price: 110, 
     unit: 'kg', 
-    image: 'https://drive.google.com/uc?export=view&id=1BGiv7nn7ymfqnQcG9QeqtDKMlOXuBc7t',
+    image: 'https://images.pexels.com/photos/6631186/pexels-photo-6631186.jpeg',
     nutrition: {
       calories: 43,
       vitamins: [{ name: 'Vitamin C', value: '75%' }, { name: 'Vitamin A', value: '10%' }],
