@@ -381,7 +381,7 @@ const FRUITS_DATA: Fruit[] = [
     description: 'Juicy summer treat from the Tarai plains.', 
     price: 65, 
     unit: 'kg', 
-    image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg',
+    image: 'https://images.pexels.com/photos/3429784/pexels-photo-3429784.jpeg',
     nutrition: {
       calories: 30,
       vitamins: [{ name: 'Vitamin C', value: '13%' }, { name: 'Vitamin A', value: '11%' }],
