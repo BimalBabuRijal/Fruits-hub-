@@ -238,9 +238,9 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
 ];
 
 const VOUCHER_TEMPLATES = [
-  { amount: 500, price: 475, label: 'Starter Gift', image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg' },
-  { amount: 1000, price: 950, label: 'Value Pack', image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg' },
-  { amount: 2500, price: 2300, label: 'Premium Harvest', image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg' },
+  { amount: 500, price: 475, label: 'Starter Gift', image: 'https://images.pexels.com/photos/5926415/pexels-photo-5926415.jpeg' },
+  { amount: 1000, price: 950, label: 'Value Pack', image: 'https://images.pexels.com/photos/35439986/pexels-photo-35439986.jpeg' },
+  { amount: 2500, price: 2300, label: 'Premium Harvest', image: 'https://images.pexels.com/photos/29908519/pexels-photo-29908519.jpeg' },
 ];
 
 interface HealthTip {
