@@ -1,5 +1,23 @@
 [
-  { "id": "1", "title": "Free Fruit Basket", "points": 5000, "image": "https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq", "type": "Gift Hamper" },
-  { "id": "2", "title": "Full Body Checkup", "points": 10000, "image": "https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq", "type": "Voucher" },
-  { "id": "3", "title": "Wellness Coach Call", "points": 3500, "image": "https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq", "type": "Voucher" }
+  {
+    "id": "1",
+    "title": "Free Fruit Basket",
+    "points": 5000,
+    "image": "https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg",
+    "type": "Gift Hamper"
+  },
+  {
+    "id": "2",
+    "title": "Full Body Checkup",
+    "points": 10000,
+    "image": "https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg",
+    "type": "Voucher"
+  },
+  {
+    "id": "3",
+    "title": "Wellness Coach Call",
+    "points": 3500,
+    "image": "https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg",
+    "type": "Voucher"
+  }
 ]

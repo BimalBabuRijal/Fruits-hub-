@@ -238,9 +238,9 @@ const SUBSCRIPTION_PLANS: SubscriptionPlan[] = [
 ];
 
 const VOUCHER_TEMPLATES = [
-  { amount: 500, price: 475, label: 'Starter Gift', image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq' },
-  { amount: 1000, price: 950, label: 'Value Pack', image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq' },
-  { amount: 2500, price: 2300, label: 'Premium Harvest', image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq' },
+  { amount: 500, price: 475, label: 'Starter Gift', image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg' },
+  { amount: 1000, price: 950, label: 'Value Pack', image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg' },
+  { amount: 2500, price: 2300, label: 'Premium Harvest', image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg' },
 ];
 
 interface HealthTip {
@@ -381,7 +381,7 @@ const FRUITS_DATA: Fruit[] = [
     description: 'Juicy summer treat from the Tarai plains.', 
     price: 65, 
     unit: 'kg', 
-    image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq',
+    image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg',
     nutrition: {
       calories: 30,
       vitamins: [{ name: 'Vitamin C', value: '13%' }, { name: 'Vitamin A', value: '11%' }],
@@ -397,7 +397,7 @@ const FRUITS_DATA: Fruit[] = [
     description: 'Authentic organic apples from Marpha, Mustang. Crispy and sweet.', 
     price: 260, 
     unit: 'kg', 
-    image: 'https://images.unsplash.com/photo-1560806887-1e4cd0b6bccb?auto=format&fit=crop&q=100&w=1600',
+    image: 'https://images.pexels.com/photos/30851810/pexels-photo-30851810.jpeg',
     nutrition: {
       calories: 52,
       vitamins: [{ name: 'Vitamin C', value: '7%' }],
@@ -423,11 +423,11 @@ const FRUITS_DATA: Fruit[] = [
     }
   },
   { id: '6', name: 'Pomegranate (Anar)', type: 'other', description: 'Ruby-red select Grade A pomegranates.', price: 320, unit: 'kg', image: 'https://images.unsplash.com/photo-1541344999736-83eca272f6fc?auto=format&fit=crop&q=100&w=1600' },
-  { id: '7', name: 'Pear (Nashpati)', type: 'stone', description: 'Crisp Asian pears from the hills of Pharping.', price: 120, unit: 'kg', image: 'https://images.unsplash.com/photo-1514756331096-242f360fe3d5?auto=format&fit=crop&q=100&w=1600' },
+  { id: '7', name: 'Pear (Nashpati)', type: 'stone', description: 'Crisp Asian pears from the hills of Pharping.', price: 120, unit: 'kg', image: 'https://images.pexels.com/photos/7667669/pexels-photo-7667669.jpeg' },
   { id: '8', name: 'Banana (Chini Champa)', type: 'tropical', description: 'Small, sweet, and aromatic local variety.', price: 140, unit: 'dozen', image: 'https://images.unsplash.com/photo-1528825871115-3581a5387919?auto=format&fit=crop&q=100&w=1600' },
-  { id: '9', name: 'Guava (Amba)', type: 'tropical', description: 'Soft pink guavas with deep tropical aroma.', price: 95, unit: 'kg', image: 'https://images.unsplash.com/photo-1627914437299-906f0e9b9d3e?auto=format&fit=crop&q=100&w=1600' },
-  { id: '11', name: 'Litchi', type: 'berry', description: 'Seasonal delights from Eastern Nepal.', price: 180, unit: 'kg', image: 'https://images.unsplash.com/photo-1590005024862-6b6455bb529e?auto=format&fit=crop&q=100&w=1600' },
-  { id: '12', name: 'Pineapple', type: 'tropical', description: 'Freshly harvested from the plains of Jhapa.', price: 120, unit: 'piece', image: 'https://images.unsplash.com/photo-1550258114-189fa29b0008?auto=format&fit=crop&q=100&w=1600' },
+  { id: '9', name: 'Guava (Amba)', type: 'tropical', description: 'Soft pink guavas with deep tropical aroma.', price: 95, unit: 'kg', image: 'https://images.pexels.com/photos/5945840/pexels-photo-5945840.jpeg' },
+  { id: '11', name: 'Litchi', type: 'berry', description: 'Seasonal delights from Eastern Nepal.', price: 180, unit: 'kg', image: 'https://images.pexels.com/photos/16965810/pexels-photo-16965810.jpeg' },
+  { id: '12', name: 'Pineapple', type: 'tropical', description: 'Freshly harvested from the plains of Jhapa.', price: 120, unit: 'piece', image: 'https://images.pexels.com/photos/6157062/pexels-photo-6157062.jpeg' },
   { id: '13', name: 'Junar (Sindhuli)', type: 'citrus', description: 'The famous sweet citrus of the Sindhuli hills.', price: 160, unit: 'kg', image: 'https://images.unsplash.com/photo-1582979512210-99b6a53386f9?auto=format&fit=crop&q=100&w=1600' },
   { 
     id: '14', 
@@ -436,7 +436,7 @@ const FRUITS_DATA: Fruit[] = [
     description: 'Export quality green kiwis from Ilam.', 
     price: 420, 
     unit: 'kg', 
-    image: 'https://images.unsplash.com/photo-1585059895324-582fc18f900b?auto=format&fit=crop&q=100&w=1600',
+    image: 'https://images.pexels.com/photos/36309310/pexels-photo-36309310.png',
     nutrition: {
       calories: 61,
       vitamins: [{ name: 'Vitamin C', value: '150%' }, { name: 'Vitamin K', value: '30%' }],
@@ -445,9 +445,9 @@ const FRUITS_DATA: Fruit[] = [
       benefits: ['Eye Health', 'Digestive Health', 'Sleep Quality']
     }
   },
-  { id: '15', name: 'Peach (Aru)', type: 'stone', description: 'Sweet summer peaches from local orchards.', price: 180, unit: 'kg', image: 'https://images.unsplash.com/photo-1550828521-4cb4440559b1?auto=format&fit=crop&q=100&w=1600' },
-  { id: '16', name: 'Custard Apple', type: 'tropical', description: 'Locally grown sweet Sitafal.', price: 280, unit: 'kg', image: 'https://images.unsplash.com/photo-1647240367355-667793d5483f?auto=format&fit=crop&q=100&w=1600' },
-  { id: '17', name: 'Jackfruit', type: 'tropical', description: 'Rich and meaty tropical delight.', price: 80, unit: 'kg', image: 'https://images.unsplash.com/photo-1589135084988-cb940e794356?auto=format&fit=crop&q=100&w=1600' },
+  { id: '15', name: 'Peach (Aru)', type: 'stone', description: 'Sweet summer peaches from local orchards.', price: 180, unit: 'kg', image: 'https://images.pexels.com/photos/9306017/pexels-photo-9306017.jpeg' },
+  { id: '16', name: 'Custard Apple', type: 'tropical', description: 'Locally grown sweet Sitafal.', price: 280, unit: 'kg', image: 'https://images.pexels.com/photos/214168/pexels-photo-214168.jpeg' },
+  { id: '17', name: 'Jackfruit', type: 'tropical', description: 'Rich and meaty tropical delight.', price: 80, unit: 'kg', image: 'https://images.pexels.com/photos/17249035/pexels-photo-17249035.jpeg' },
   { 
     id: '19', 
     name: 'Dragon Fruit', 
@@ -455,7 +455,7 @@ const FRUITS_DATA: Fruit[] = [
     description: 'Organic pink-fleshed dragon fruit.', 
     price: 450, 
     unit: 'kg', 
-    image: 'https://images.unsplash.com/photo-1527324688101-08d3663b6044?auto=format&fit=crop&q=100&w=1600',
+    image: 'https://images.pexels.com/photos/5945957/pexels-photo-5945957.jpeg',
     nutrition: {
       calories: 60,
       vitamins: [{ name: 'Vitamin C', value: '15%' }],
@@ -464,7 +464,7 @@ const FRUITS_DATA: Fruit[] = [
       benefits: ['Gut Health', 'Iron Boost', 'Blood Sugar Stabilization']
     }
   },
-  { id: '20', name: 'Grapes (Angur)', type: 'berry', description: 'Fresh, sweet, and seedless green grapes from quality vineyards.', price: 280, unit: 'kg', image: 'https://images.unsplash.com/photo-1596364721223-3061329d81f0?auto=format&fit=crop&q=100&w=1600' },
+  { id: '20', name: 'Grapes (Angur)', type: 'berry', description: 'Fresh, sweet, and seedless green grapes from quality vineyards.', price: 280, unit: 'kg', image: 'https://images.pexels.com/photos/30277704/pexels-photo-30277704.jpeg' },
 ];
 
 const FAQ_DATA = [
@@ -511,9 +511,9 @@ const REPORTS_DATA: Report[] = [
 ];
 
 const REWARDS_DATA: Reward[] = [
-  { id: '1', title: 'Free Fruit Basket', points: 5000, image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq', type: 'Gift Hamper' },
-  { id: '2', title: 'Full Body Checkup', points: 10000, image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq', type: 'Voucher' },
-  { id: '3', title: 'Wellness Coach Call', points: 3500, image: 'https://drive.google.com/uc?export=view&id=1xIMk4NDbuKpMO22yEPzu2K6rsj5M_Szq', type: 'Voucher' },
+  { id: '1', title: 'Free Fruit Basket', points: 5000, image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg', type: 'Gift Hamper' },
+  { id: '2', title: 'Full Body Checkup', points: 10000, image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg', type: 'Voucher' },
+  { id: '3', title: 'Wellness Coach Call', points: 3500, image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg', type: 'Voucher' },
 ];
 
 const API_KEY =
