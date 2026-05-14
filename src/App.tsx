@@ -511,9 +511,9 @@ const REPORTS_DATA: Report[] = [
 ];
 
 const REWARDS_DATA: Reward[] = [
-  { id: '1', title: 'Free Fruit Basket', points: 5000, image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg', type: 'Gift Hamper' },
-  { id: '2', title: 'Full Body Checkup', points: 10000, image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg', type: 'Voucher' },
-  { id: '3', title: 'Wellness Coach Call', points: 3500, image: 'https://images.pexels.com/photos/4869144/pexels-photo-4869144.jpeg', type: 'Voucher' },
+  { id: '1', title: 'Free Fruit Basket', points: 5000, image: 'https://images.pexels.com/photos/31387472/pexels-photo-31387472.jpeg', type: 'Gift Hamper' },
+  { id: '2', title: 'Full Body Checkup', points: 10000, image: 'https://images.pexels.com/photos/8670188/pexels-photo-8670188.jpeg', type: 'Voucher' },
+  { id: '3', title: 'Wellness Coach Call', points: 3500, image: 'https://images.pexels.com/photos/3998002/pexels-photo-3998002.jpeg', type: 'Voucher' },
 ];
 
 const API_KEY =
