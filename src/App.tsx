@@ -1247,6 +1247,7 @@ const AnimatedFruitBg = ({ type }: { type: Fruit['type'] }) => {
 const FruitSection = ({ 
   fruits, 
   onImageUrlChange, 
+  onEditPrice,
   onReset, 
   onClearAll,
   onAddFruit,
@@ -1261,6 +1262,7 @@ const FruitSection = ({
 }: { 
   fruits: Fruit[], 
   onImageUrlChange: (id: string, url: string) => void, 
+  onEditPrice?: (fruit: Fruit) => void,
   onReset: () => void,
   onClearAll: () => void,
   onAddFruit: () => void,
@@ -1404,16 +1406,25 @@ const FruitSection = ({
                     <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     
                     {user?.email === OWNER_EMAIL && (
-                      <button 
-                        onClick={() => {
-                          const url = window.prompt("Enter new Image URL:");
-                          if (url) onImageUrlChange(fruit.id, url);
-                        }}
-                        className="absolute top-3 right-3 p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110 z-20 group/cam opacity-0 group-hover:opacity-100"
-                        title="Change Image via URL"
-                      >
-                        <Camera size={18} className="text-gray-600 group-hover/cam:text-green-600 transition-colors" />
-                      </button>
+                      <div className="absolute top-3 left-3 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all z-20">
+                        <button 
+                          onClick={() => {
+                            const url = window.prompt("Enter new Image URL:");
+                            if (url) onImageUrlChange(fruit.id, url);
+                          }}
+                          className="p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110"
+                          title="Change Image via URL"
+                        >
+                          <Camera size={18} className="text-gray-600 hover:text-green-600" />
+                        </button>
+                        <button 
+                          onClick={() => onEditPrice?.(fruit)}
+                          className="p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 cursor-pointer hover:bg-white transition-all transform hover:scale-110"
+                          title="Edit Market Price & Name"
+                        >
+                          <Edit2 size={18} className="text-gray-600 hover:text-green-600" />
+                        </button>
+                      </div>
                     )}
 
                     <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur px-3 py-1.5 rounded-2xl shadow-sm flex items-center gap-1.5 border border-gray-100">
@@ -2370,35 +2381,75 @@ const CartSidebar = ({
   return null;
 };
 
-const SubscriptionsSection = ({ onSelect }: { onSelect: (plan: SubscriptionPlan) => void }) => {
+const SubscriptionsSection = ({ 
+  plans, 
+  onSelect, 
+  onUpdate, 
+  onAdd, 
+  onDelete, 
+  user 
+}: { 
+  plans: SubscriptionPlan[], 
+  onSelect: (plan: SubscriptionPlan) => void,
+  onUpdate?: (plan: SubscriptionPlan) => void,
+  onAdd?: () => void,
+  onDelete?: (id: string) => void,
+  user: User | null
+}) => {
   return (
-    <section id="subscriptions" className="py-24 bg-gray-50 overflow-hidden">
+    <section id="subscriptions" className="py-24 bg-gray-50 overflow-hidden scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">
-        <SectionHeading 
-          id="subs-heading"
-          badge="Hassle Free"
-          title="Freshness on Autopilot."
-          subtitle="Choose a subscription plan and never run out of your favorite local fruits again."
-          centered={false}
-        />
+        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
+          <SectionHeading 
+            id="subs-heading"
+            badge="Hassle Free"
+            title="Freshness on Autopilot."
+            subtitle="Choose a subscription plan and never run out of your favorite local fruits again."
+            centered={false}
+          />
+          {user?.email === OWNER_EMAIL && onAdd && (
+            <button 
+              onClick={onAdd}
+              className="px-6 py-4 bg-green-600 text-white rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-green-700 transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-green-100"
+            >
+              <Plus size={16} /> Add Subscription Plan
+            </button>
+          )}
+        </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-12">
-          {SUBSCRIPTION_PLANS.map((plan) => (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mt-12">
+          {plans.map((plan) => (
             <motion.div
               key={plan.id}
               whileHover={{ y: -10 }}
-              className="bg-white rounded-[48px] overflow-hidden border border-gray-100 shadow-xl shadow-gray-200/50 flex flex-col md:flex-row p-4 gap-8"
+              className="bg-white rounded-[48px] overflow-hidden border border-gray-100 shadow-xl shadow-gray-200/50 flex flex-col p-4 gap-6 group relative"
             >
-              <div className="md:w-1/2 aspect-square md:aspect-auto rounded-[36px] overflow-hidden">
-                <img src={plan.image} alt={plan.name} className="w-full h-full object-cover" />
+              <div className="aspect-[16/9] rounded-[36px] overflow-hidden relative">
+                <img src={plan.image} alt={plan.name} className="w-full h-full object-cover transition-transform group-hover:scale-110 duration-700" />
+                {user?.email === OWNER_EMAIL && (
+                  <div className="absolute top-4 right-4 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                    <button 
+                      onClick={() => onUpdate?.(plan)}
+                      className="p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 hover:bg-white text-gray-600 hover:text-green-600 transition-all"
+                    >
+                      <Edit2 size={16} />
+                    </button>
+                    <button 
+                      onClick={() => onDelete?.(plan.id)}
+                      className="p-2.5 bg-white/90 backdrop-blur rounded-2xl shadow-lg border border-gray-100 hover:bg-white text-gray-600 hover:text-red-600 transition-all"
+                    >
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
-              <div className="md:w-1/2 flex flex-col justify-center pr-4">
+              <div className="flex flex-col flex-grow px-4 pb-4">
                 <div className="inline-block px-3 py-1 bg-green-50 text-green-600 rounded-full text-[10px] font-black uppercase tracking-widest mb-4 w-fit">
                   {plan.frequency}
                 </div>
                 <h3 className="text-2xl font-black text-gray-900 mb-2">{plan.name}</h3>
-                <p className="text-xs text-gray-500 font-medium mb-6 leading-relaxed">{plan.description}</p>
-                <div className="space-y-2 mb-8">
+                <p className="text-xs text-gray-500 font-medium mb-6 leading-relaxed line-clamp-2">{plan.description}</p>
+                <div className="space-y-2 mb-8 flex-grow">
                   {plan.benefits.map((benefit, i) => (
                     <div key={i} className="flex items-center gap-2">
                       <div className="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center">
@@ -2408,7 +2459,7 @@ const SubscriptionsSection = ({ onSelect }: { onSelect: (plan: SubscriptionPlan)
                     </div>
                   ))}
                 </div>
-                <div className="flex items-center justify-between mt-auto">
+                <div className="flex items-center justify-between pt-6 border-t border-gray-50">
                   <div>
                     <span className="text-[10px] font-black text-gray-400 uppercase block">Starting at</span>
                     <span className="text-2xl font-black text-gray-900">Rs. {plan.price}</span>
@@ -2523,44 +2574,85 @@ const GiftVoucherSection = ({
   );
 };
 
-const FitnessSection = ({ onAddToCart }: { onAddToCart: (plan: FitnessPlan, direct?: boolean) => void }) => {
+const FitnessSection = ({ 
+  plans,
+  onAddToCart,
+  onUpdate,
+  onAdd,
+  onDelete,
+  user
+}: { 
+  plans: FitnessPlan[],
+  onAddToCart: (plan: FitnessPlan, direct?: boolean) => void,
+  onUpdate?: (plan: FitnessPlan) => void,
+  onAdd?: () => void,
+  onDelete?: (id: string) => void,
+  user: User | null
+}) => {
   return (
-    <section id="fitness" className="py-24 bg-gray-50">
+    <section id="fitness" className="py-24 bg-white scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">
-        <SectionHeading 
-          id="fitness-heading"
-          badge="Training"
-          title="Fuel your body. Train your mind."
-          subtitle="Personalized plans combining nutrition science and expert workouts."
-        />
+        <div className="flex flex-col md:flex-row justify-between items-end mb-12 gap-8">
+          <SectionHeading 
+            id="fitness-heading"
+            badge="Training"
+            title="Fuel your body. Train your mind."
+            subtitle="Personalized plans combining nutrition science and expert workouts."
+            centered={false}
+          />
+          {user?.email === OWNER_EMAIL && onAdd && (
+            <button 
+              onClick={onAdd}
+              className="px-6 py-4 bg-green-600 text-white rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-green-700 transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-green-100"
+            >
+              <Plus size={16} /> Add Fitness Plan
+            </button>
+          )}
+        </div>
 
-        <div className="grid md:grid-cols-3 gap-8 mb-20">
-          {FITNESS_PLANS.map((plan, i) => (
+        <div className="grid md:grid-cols-3 gap-8 mb-20 px-4">
+          {plans.map((plan, i) => (
             <motion.div
               key={plan.id}
-              initial={{ opacity: 0, x: -20 }}
-              whileInView={{ opacity: 1, x: 0 }}
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
               viewport={{ once: true }}
-              className={`p-10 rounded-[50px] flex flex-col h-full bg-white border ${i === 1 ? 'border-green-500 shadow-2xl shadow-green-100 ring-4 ring-green-50' : 'border-gray-100 shadow-sm'}`}
+              className={`p-10 rounded-[50px] flex flex-col h-full bg-white border relative group ${i === 1 ? 'border-green-500 shadow-2xl shadow-green-100 ring-4 ring-green-50' : 'border-gray-100 shadow-xl shadow-gray-200/30'}`}
             >
+              {user?.email === OWNER_EMAIL && (
+                <div className="absolute top-6 right-6 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all">
+                  <button 
+                    onClick={() => onUpdate?.(plan)}
+                    className="p-2 bg-gray-50 hover:bg-white rounded-xl shadow border border-gray-100 text-gray-500 hover:text-green-600 transition-all"
+                  >
+                    <Edit2 size={14} />
+                  </button>
+                  <button 
+                    onClick={() => onDelete?.(plan.id)}
+                    className="p-2 bg-gray-50 hover:bg-white rounded-xl shadow border border-gray-100 text-gray-500 hover:text-red-600 transition-all"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              )}
               <div className="mb-8">
                 <span className="text-xs font-bold text-green-600 uppercase tracking-widest bg-green-50 px-3 py-1 rounded-full mb-4 inline-block">
                   {plan.level}
                 </span>
                 <h3 className="text-3xl font-bold text-gray-900 mb-2">{plan.name}</h3>
-                <p className="text-gray-500">{plan.description}</p>
+                <p className="text-gray-500 text-sm font-medium leading-relaxed">{plan.description}</p>
               </div>
               
-              <div className="text-4xl font-bold text-gray-900 mb-8 font-display">
-                NPR {plan.price} <span className="text-base text-gray-400 font-normal font-sans">/month</span>
+              <div className="text-4xl font-black text-gray-900 mb-8 font-display">
+                Rs. {plan.price} <span className="text-base text-gray-400 font-normal font-sans">/mo</span>
               </div>
 
               <ul className="space-y-4 mb-10 flex-grow">
                 {plan.features.map((f, idx) => (
-                  <li key={idx} className="flex items-center gap-3 text-gray-600 text-sm">
-                    <div className="w-5 h-5 rounded-full bg-green-100 flex items-center justify-center text-green-600 shrink-0">
-                      <ChevronRight size={14} />
+                  <li key={idx} className="flex items-center gap-3 text-gray-600 text-sm font-medium">
+                    <div className="w-5 h-5 rounded-full bg-green-50 flex items-center justify-center text-green-600 shrink-0">
+                      <Check size={12} />
                     </div>
                     {f}
                   </li>
@@ -2570,58 +2662,62 @@ const FitnessSection = ({ onAddToCart }: { onAddToCart: (plan: FitnessPlan, dire
               <div className="flex gap-2">
                 <button 
                   onClick={() => onAddToCart(plan, false)}
-                  className="flex-1 py-4 rounded-2xl font-bold bg-gray-50 text-gray-900 hover:bg-gray-100 transition-all text-sm flex items-center justify-center gap-2"
+                  className="flex-1 py-4 rounded-2xl font-black uppercase tracking-widest bg-gray-50 text-gray-900 hover:bg-gray-100 transition-all text-[10px] flex items-center justify-center gap-2"
                 >
-                  <Plus size={18} /> Bag
+                  <Plus size={16} /> Bag
                 </button>
                 <button 
                   onClick={() => onAddToCart(plan, true)}
-                  className={`flex-[2] py-4 rounded-2xl font-bold transition-all text-center text-sm ${i === 1 ? 'bg-green-600 text-white shadow-xl shadow-green-200 hover:bg-green-700' : 'bg-gray-900 text-white hover:bg-gray-800'}`}
+                  className={`flex-[2] py-4 rounded-2xl font-black uppercase tracking-widest transition-all text-center text-[10px] ${i === 1 ? 'bg-green-600 text-white shadow-xl shadow-green-200 hover:bg-green-700' : 'bg-gray-900 text-white hover:bg-gray-800'}`}
                 >
-                  Buy Now
+                  Choose Plan
                 </button>
               </div>
             </motion.div>
           ))}
         </div>
 
-        {/* Workout Preview */}
-        <div className="bg-white rounded-[50px] p-10 md:p-16 text-gray-900 grid md:grid-cols-2 gap-16 items-center shadow-2xl shadow-green-100 border border-green-50">
+        {/* Workout Preview - Static for now */}
+        <div className="bg-gray-900 rounded-[64px] p-10 md:p-20 text-white grid md:grid-cols-2 gap-20 items-center shadow-2xl shadow-green-100 transition-all hover:scale-[1.01] duration-500">
           <div>
-            <h3 className="text-4xl font-bold mb-6 font-display text-gray-900">Sample Weekly Workout</h3>
-            <p className="text-gray-500 mb-10 leading-relaxed font-medium">
+            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/10 backdrop-blur rounded-full mb-8">
+              <Zap size={16} className="text-yellow-400" />
+              <span className="text-[10px] font-black uppercase tracking-widest">Training Sneak Peek</span>
+            </div>
+            <h3 className="text-5xl md:text-6xl font-black italic tracking-tighter mb-8 font-display leading-[0.9]">Weekly Sample <br/> Guide.</h3>
+            <p className="text-gray-400 mb-12 leading-relaxed font-medium">
               A balanced 7-day plan combining strength, cardio, and recovery. 
               Designed to work with your energy levels throughout the week.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
                 { day: 'Mon', title: 'Upper Body', time: '45m' },
                 { day: 'Tue', title: 'Cardio Core', time: '40m' },
                 { day: 'Wed', title: 'Recovery', time: '30m' },
                 { day: 'Thu', title: 'Power Legs', time: '45m' },
               ].map((w, i) => (
-                <div key={i} className="flex items-center gap-4 bg-green-50/50 p-4 rounded-2xl border border-green-100 hover:bg-green-100/50 transition-all group">
-                  <div className="w-10 h-10 bg-green-600 text-white rounded-xl flex items-center justify-center font-bold text-xs group-hover:rotate-12 transition-transform shadow-lg shadow-green-200">
+                <div key={i} className="flex items-center gap-4 bg-white/5 p-4 rounded-3xl border border-white/5 hover:bg-white/10 transition-all group">
+                  <div className="w-10 h-10 bg-green-600 text-white rounded-xl flex items-center justify-center font-black text-xs group-hover:rotate-12 transition-transform shadow-lg shadow-green-900/50">
                     {w.day}
                   </div>
                   <div>
-                    <h5 className="font-bold text-sm tracking-wide text-gray-900">{w.title}</h5>
-                    <p className="text-xs text-green-600 flex items-center gap-1 font-bold"><Clock size={12}/> {w.time}</p>
+                    <h5 className="font-black text-xs tracking-tight text-white">{w.title}</h5>
+                    <p className="text-[10px] text-green-400 flex items-center gap-1 font-black uppercase tracking-widest mt-1 opacity-70"><Clock size={10}/> {w.time}</p>
                   </div>
                 </div>
               ))}
             </div>
           </div>
           <div className="relative">
-            <div className="aspect-[4/5] rounded-[40px] overflow-hidden shadow-2xl ring-1 ring-black/5">
+            <div className="aspect-[4/5] rounded-[48px] overflow-hidden shadow-2xl border-8 border-white/5">
               <img 
                 src="https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&q=80&w=800" 
                 alt="Fitness Training" 
-                className="w-full h-full object-cover"
+                className="w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700"
                 referrerPolicy="no-referrer"
               />
             </div>
-            <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-500 rounded-full blur-[80px] opacity-20 -z-10" />
+            <div className="absolute -top-10 -right-10 w-40 h-40 bg-green-500 rounded-full blur-[80px] opacity-20 -z-10 animate-pulse" />
           </div>
         </div>
       </div>
@@ -2629,13 +2725,27 @@ const FitnessSection = ({ onAddToCart }: { onAddToCart: (plan: FitnessPlan, dire
   );
 };
 
-const CheckupsSection = ({ onAddToCart, reviews, onRate }: { 
+const CheckupsSection = ({ 
+  packages, 
+  onAddToCart, 
+  onUpdate,
+  onAdd,
+  onDelete,
+  reviews, 
+  onRate,
+  user
+}: { 
+  packages: CheckupPackage[],
   onAddToCart: (pkg: CheckupPackage, direct?: boolean) => void,
+  onUpdate?: (pkg: CheckupPackage) => void,
+  onAdd?: () => void,
+  onDelete?: (id: string) => void,
   reviews: Review[],
-  onRate: (id: string, name: string) => void
+  onRate: (id: string, name: string) => void,
+  user: User | null
 }) => {
   return (
-    <section id="checkups" className="py-24 bg-white">
+    <section id="checkups" className="py-24 bg-white scroll-mt-20">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex flex-col md:flex-row justify-between items-end mb-16 gap-8">
           <SectionHeading 
@@ -2645,7 +2755,15 @@ const CheckupsSection = ({ onAddToCart, reviews, onRate }: {
             subtitle="Skip the queues. Certified experts collect samples at home. Certified results in 24h."
             centered={false}
           />
-          <div className="flex gap-4">
+          <div className="flex flex-wrap gap-4">
+            {user?.email === OWNER_EMAIL && onAdd && (
+              <button 
+                onClick={onAdd}
+                className="px-6 py-4 bg-green-600 text-white rounded-[24px] text-xs font-black uppercase tracking-widest hover:bg-green-700 transition-all flex items-center gap-2 active:scale-95 shadow-lg shadow-green-100"
+              >
+                <Plus size={16} /> Add Package
+              </button>
+            )}
             <div className="p-4 bg-blue-50 rounded-3xl text-center min-w-[120px]">
               <div className="text-2xl font-bold text-blue-600 font-display">8k+</div>
               <div className="text-[10px] uppercase font-bold text-blue-400">Tests Done</div>
@@ -2658,15 +2776,31 @@ const CheckupsSection = ({ onAddToCart, reviews, onRate }: {
         </div>
 
         <div className="grid md:grid-cols-2 gap-10">
-          {CHECKUP_PACKAGES.map((pkg, i) => {
+          {packages.map((pkg, i) => {
             const { avgRating, count } = getRatingData(pkg.id, reviews);
             return (
               <div key={pkg.id} className="bg-gray-50 p-10 rounded-[50px] border border-gray-100 shadow-sm relative overflow-hidden group">
+                {user?.email === OWNER_EMAIL && (
+                  <div className="absolute top-8 right-8 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all z-20">
+                    <button 
+                      onClick={() => onUpdate?.(pkg)}
+                      className="p-3 bg-white hover:bg-white rounded-2xl shadow border border-gray-100 text-gray-600 hover:text-green-600 transition-all"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                    <button 
+                      onClick={() => onDelete?.(pkg.id)}
+                      className="p-3 bg-white hover:bg-white rounded-2xl shadow border border-gray-100 text-gray-600 hover:text-red-600 transition-all"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </div>
+                )}
                 <div className="relative z-10">
                   <div className="flex justify-between items-start mb-8">
                     <div>
                       <div className="flex items-center gap-3 mb-2">
-                        <h3 className="text-3xl font-bold text-gray-900">{pkg.name}</h3>
+                        <h3 className="text-3xl font-bold text-gray-900 leading-tight">{pkg.name}</h3>
                         <button 
                           onClick={() => onRate(pkg.id, pkg.name)}
                           className="bg-white/90 backdrop-blur px-2.5 py-1 rounded-full shadow-sm flex items-center gap-1 hover:bg-white transition-all active:scale-95 border border-gray-100/50"
@@ -2676,17 +2810,17 @@ const CheckupsSection = ({ onAddToCart, reviews, onRate }: {
                           <span className="text-[10px] text-gray-400 font-bold">({count})</span>
                         </button>
                       </div>
-                      <p className="text-gray-500 max-w-xs">{pkg.description}</p>
+                      <p className="text-gray-500 max-w-xs text-sm font-medium leading-relaxed">{pkg.description}</p>
                     </div>
                   <div className="text-right">
-                    <div className="text-sm text-gray-400 line-through mb-1">NPR {pkg.originalPrice}</div>
-                    <div className="text-3xl font-bold text-blue-600 font-display">NPR {pkg.price}</div>
+                    <div className="text-xs text-gray-400 line-through mb-1 font-bold">Rs. {pkg.originalPrice}</div>
+                    <div className="text-3xl font-black text-blue-600 font-display tracking-tight">Rs. {pkg.price}</div>
                   </div>
                 </div>
                 
                 <div className="grid grid-cols-2 gap-4 mb-10">
                   {pkg.tests.map((test, idx) => (
-                    <div key={idx} className="flex items-center gap-3 text-xs font-semibold text-gray-600">
+                    <div key={idx} className="flex items-center gap-3 text-[10px] font-black uppercase tracking-widest text-gray-400">
                       <div className="w-2 h-2 bg-blue-400 rounded-full" />
                       {test}
                     </div>
@@ -2696,13 +2830,13 @@ const CheckupsSection = ({ onAddToCart, reviews, onRate }: {
                 <div className="flex gap-4">
                   <button 
                     onClick={() => onAddToCart(pkg, false)}
-                    className="flex-1 py-5 bg-white border-2 border-gray-100 text-gray-900 rounded-2xl font-bold flex items-center justify-center gap-2 hover:border-blue-600 hover:text-blue-600 transition-all"
+                    className="flex-1 py-5 bg-white border-2 border-gray-100 text-gray-900 rounded-[24px] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:border-blue-600 hover:text-blue-600 transition-all active:scale-95"
                   >
                     <Plus size={20} /> Add to Bag
                   </button>
                   <button 
                     onClick={() => onAddToCart(pkg, true)}
-                    className="flex-[2] bg-gray-900 text-white py-5 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-blue-600 transition-all group/btn shadow-xl shadow-gray-200 hover:shadow-blue-200"
+                    className="flex-[2] bg-gray-900 text-white py-5 rounded-[24px] text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-blue-600 transition-all group/btn shadow-xl shadow-gray-200 hover:shadow-blue-200 active:scale-95"
                   >
                     Book Now <ArrowUpRight size={20} className="group-hover/btn:translate-x-1 group-hover/btn:-translate-y-1 transition-transform" />
                   </button>
@@ -2714,21 +2848,21 @@ const CheckupsSection = ({ onAddToCart, reviews, onRate }: {
         })}
       </div>
 
-        <div className="mt-20">
-          <h4 className="text-xl font-bold text-gray-900 mb-8">Speciality Panels</h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-            {['Heart Health', 'Diabetes Care', 'Bone & Joint', 'Thyroid', 'Liver Function', 'Vitamin Panel'].map((item, i) => (
-              <div key={i} className="bg-white border border-gray-100 p-6 rounded-3xl text-center hover:shadow-xl hover:shadow-blue-50 transition-all cursor-pointer group">
-                <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-4 mx-auto group-hover:scale-110 transition-transform font-display">
-                  <Activity size={20} />
-                </div>
-                <span className="text-xs font-bold text-gray-900 uppercase tracking-wide">{item}</span>
+      <div className="mt-20">
+        <h4 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-8">Speciality Panels</h4>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+          {['Heart Health', 'Diabetes Care', 'Bone & Joint', 'Thyroid', 'Liver Function', 'Vitamin Panel'].map((item, i) => (
+            <div key={i} className="bg-white border border-gray-100 p-6 rounded-[32px] text-center hover:shadow-2xl hover:shadow-blue-50 transition-all cursor-pointer group hover:-translate-y-2">
+              <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center text-blue-600 mb-4 mx-auto group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all font-display shadow-sm">
+                <Activity size={20} />
               </div>
-            ))}
-          </div>
+              <span className="text-[10px] font-black text-gray-900 uppercase tracking-widest leading-tight block">{item}</span>
+            </div>
+          ))}
         </div>
       </div>
-    </section>
+    </div>
+  </section>
   );
 };
 
@@ -4274,6 +4408,7 @@ export default function App() {
   const [fitnessPlans, setFitnessPlans] = useState<FitnessPlan[]>(FITNESS_PLANS);
   const [checkupPackages, setCheckupPackages] = useState<CheckupPackage[]>(CHECKUP_PACKAGES);
   const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>(SUBSCRIPTION_PLANS);
+  const [isAdminMode, setIsAdminMode] = useState(false);
   const [paymentQR, setPaymentQR] = useState('');
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -4411,6 +4546,96 @@ export default function App() {
       localStorage.setItem('freshvita_users', JSON.stringify(users));
     }
   }, []);
+
+  const handleAddSubscriptionPlan = () => {
+    const name = window.prompt('Plan Name:');
+    if (!name) return;
+    const price = parseInt(window.prompt('Price (Rs):') || '0');
+    const freq = (window.prompt('Frequency (weekly, monthly):') || 'monthly') as any;
+    const description = window.prompt('Description:') || '';
+    const benefits = (window.prompt('Benefits (comma separated):') || '').split(',').map(b => b.trim());
+
+    const newPlan: SubscriptionPlan = {
+      id: `sub-${Math.random().toString(36).substr(2, 9)}`,
+      name,
+      price,
+      frequency: freq,
+      description,
+      benefits,
+      image: 'https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400'
+    };
+
+    setSubscriptionPlans(prev => {
+      const updated = [...prev, newPlan];
+      saveToServer('subscription_plans', updated);
+      return updated;
+    });
+    notify('Subscription Plan Added', `${name} created.`, 'system');
+  };
+
+  const handleUpdateSubscriptionPlan = (plan: SubscriptionPlan) => {
+    const newPrice = parseInt(window.prompt(`Update price for ${plan.name} (Current: Rs. ${plan.price}):`, plan.price.toString()) || plan.price.toString());
+    const newName = window.prompt(`Update name for ${plan.name}:`, plan.name) || plan.name;
+    const newDesc = window.prompt(`Update description:`, plan.description) || plan.description;
+
+    const updatedPlan = { ...plan, price: newPrice, name: newName, description: newDesc };
+    setSubscriptionPlans(prev => {
+      const updated = prev.map(p => p.id === plan.id ? updatedPlan : p);
+      saveToServer('subscription_plans', updated);
+      return updated;
+    });
+    notify('Subscription Updated', `${plan.name} pricing changed.`, 'system');
+  };
+
+  const handleDeleteSubscriptionPlan = (id: string) => {
+    if (!window.confirm('Delete this subscription plan?')) return;
+    setSubscriptionPlans(prev => {
+      const updated = prev.filter(p => p.id !== id);
+      saveToServer('subscription_plans', updated);
+      return updated;
+    });
+    notify('Plan Deleted', 'Subscription plan removed.', 'system');
+  };
+
+  const handleUpdateFitnessPlan = (plan: FitnessPlan) => {
+    const newPrice = parseInt(window.prompt(`Update price for ${plan.name} (Current: Rs. ${plan.price}):`, plan.price.toString()) || plan.price.toString());
+    const newName = window.prompt(`Update name:`, plan.name) || plan.name;
+    
+    const updatedPlan = { ...plan, price: newPrice, name: newName };
+    setFitnessPlans(prev => {
+      const updated = prev.map(p => p.id === plan.id ? updatedPlan : p);
+      saveToServer('fitness_plans', updated);
+      return updated;
+    });
+    notify('Fitness Plan Updated', `${plan.name} modified.`, 'system');
+  };
+
+  const handleUpdateCheckupPackage = (pkg: CheckupPackage) => {
+    const newPrice = parseInt(window.prompt(`Update price for ${pkg.name} (Current: Rs. ${pkg.price}):`, pkg.price.toString()) || pkg.price.toString());
+    const newOrig = parseInt(window.prompt(`Update original price:`, pkg.originalPrice.toString()) || pkg.originalPrice.toString());
+    
+    const updatedPkg = { ...pkg, price: newPrice, originalPrice: newOrig };
+    setCheckupPackages(prev => {
+      const updated = prev.map(p => p.id === pkg.id ? updatedPkg : p);
+      saveToServer('checkup_packages', updated);
+      return updated;
+    });
+    notify('Checkup Updated', `${pkg.name} pricing changed.`, 'system');
+  };
+
+  const handleEditFruit = (fruit: Fruit) => {
+    const newPrice = parseInt(window.prompt(`Market Price for ${fruit.name} per ${fruit.unit} (Current: Rs. ${fruit.price}):`, fruit.price.toString()) || fruit.price.toString());
+    const newName = window.prompt(`Update Fruit Name:`, fruit.name) || fruit.name;
+    
+    const updatedFruit = { ...fruit, price: newPrice, name: newName };
+    setFruits(prev => {
+      const updated = prev.map(f => f.id === fruit.id ? updatedFruit : f);
+      saveToServer('fruits', updated);
+      return updated;
+    });
+    setHasPendingChanges(true); // To trigger save for images too if needed
+    notify('Market Price Updated', `${fruit.name} is now Rs. ${newPrice}/${fruit.unit}`, 'system');
+  };
 
   const cartCount = cart.reduce((acc, curr) => acc + curr.quantity, 0);
 
@@ -4915,12 +5140,50 @@ export default function App() {
       />
 
       <main>
+        {currentUser?.email === OWNER_EMAIL && (
+          <div className="sticky top-20 z-40 bg-green-600 text-white px-6 py-4 flex justify-between items-center shadow-2xl">
+            <div className="flex items-center gap-4">
+              <div className="bg-white/20 p-2 rounded-xl backdrop-blur">
+                <ShieldCheck size={20} />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-[10px] font-black uppercase tracking-widest text-green-100 leading-none mb-1">Founder Controls</span>
+                <span className="text-sm font-bold tracking-tight">Market Demand Mode Active</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setIsAdminMode(!isAdminMode)}
+                className={`px-6 py-2 rounded-xl text-xs font-black uppercase tracking-widest transition-all ${isAdminMode ? 'bg-white text-green-700 shadow-xl' : 'bg-green-700 text-white'}`}
+              >
+                {isAdminMode ? 'Exit Management' : 'Manage Inventory'}
+              </button>
+              {hasPendingChanges && (
+                <button 
+                  onClick={saveAllPendingImageChanges}
+                  className="px-6 py-2 bg-yellow-400 text-gray-900 rounded-xl text-xs font-black uppercase tracking-widest shadow-xl hover:bg-yellow-300 transition-all flex items-center gap-2 animate-bounce"
+                >
+                  <RefreshCcw size={14} /> Save All Changes
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
         <Hero searchQuery={searchQuery} onSearchChange={setSearchQuery} />
         <HealthTipsSection />
-        <SubscriptionsSection onSelect={handleSubscribe} />
+        <SubscriptionsSection 
+          plans={subscriptionPlans}
+          onSelect={handleSubscribe} 
+          onUpdate={handleUpdateSubscriptionPlan}
+          onAdd={handleAddSubscriptionPlan}
+          onDelete={handleDeleteSubscriptionPlan}
+          user={currentUser}
+        />
         <FruitSection 
           fruits={filteredFruits} 
           onImageUrlChange={(id, url) => handleImageUrlChange('fruit', id, url)} 
+          onEditPrice={handleEditFruit}
           onReset={handleImageReset}
           onClearAll={handleClearAllFruits}
           onAddFruit={handleAddFruit}
@@ -4945,9 +5208,19 @@ export default function App() {
           onImageUrlChange={(id, url) => handleImageUrlChange('voucher', id, url)}
           user={currentUser}
         />
-        <FitnessSection onAddToCart={addToCart} />
+        <FitnessSection 
+          plans={fitnessPlans}
+          onAddToCart={addToCart} 
+          onUpdate={handleUpdateFitnessPlan}
+          onAdd={() => notify('Feature Coming', 'Adding fitness plans from UI coming soon!', 'system')}
+          user={currentUser}
+        />
         <CheckupsSection 
+          packages={checkupPackages}
           onAddToCart={addToCart}
+          onUpdate={handleUpdateCheckupPackage}
+          onAdd={() => notify('Feature Coming', 'Adding packages from UI coming soon!', 'system')}
+          user={currentUser}
           reviews={reviews}
           onRate={(id, name) => {
             setReviewItem({ id, name });
