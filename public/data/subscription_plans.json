@@ -1,0 +1,29 @@
+[
+  {
+    "id": "sub-basic",
+    "name": "Basic Fresh",
+    "price": 1500,
+    "frequency": "monthly",
+    "description": "Perfect for beginners. A steady supply of essential fruits delivered to your door.",
+    "benefits": ["Weekly Delivery", "Standard Fruit Box", "Free Ring Road Delivery"],
+    "image": "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&q=80&w=400"
+  },
+  {
+    "id": "sub-vitality",
+    "name": "Family Vitality",
+    "price": 4500,
+    "frequency": "monthly",
+    "description": "Nourish your whole family with vitamins and variety. Our most popular choice.",
+    "benefits": ["Twice Weekly Delivery", "Exotic + Local Mix", "15% Savings vs Retail"],
+    "image": "https://images.unsplash.com/photo-1610832958506-aa56368176cf?auto=format&fit=crop&q=80&w=400"
+  },
+  {
+    "id": "sub-elite",
+    "name": "Elite Wellness",
+    "price": 9500,
+    "frequency": "monthly",
+    "description": "The ultimate health journey. Premium imports, superfoods, and priority care.",
+    "benefits": ["VIP Selection", "Rare Superfruits", "Free Quarterly Health Checkup", "Personal Wellness Coach"],
+    "image": "https://images.unsplash.com/photo-1519996529931-28324d5a630e?auto=format&fit=crop&q=80&w=400"
+  }
+]

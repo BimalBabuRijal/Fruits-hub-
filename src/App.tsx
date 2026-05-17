@@ -381,7 +381,7 @@ const FRUITS_DATA: Fruit[] = [
     description: 'Juicy summer treat from the Tarai plains.', 
     price: 65, 
     unit: 'kg', 
-    image: 'https://images.pexels.com/photos/3429784/pexels-photo-3429784.jpeg',
+    image: 'https://images.unsplash.com/photo-1652031552021-50bcc01121a7?w=500&auto=format&fit=crop&q=60&ixlib=rb-4.1.0&ixid=M3wxMjA3fDB8MHxzZWFyY2h8MTJ8fHdhdGVybWVsb258ZW58MHx8MHx8fDA%3D',
     nutrition: {
       calories: 30,
       vitamins: [{ name: 'Vitamin C', value: '13%' }, { name: 'Vitamin A', value: '11%' }],
@@ -4263,23 +4263,17 @@ const handlePurchase = () => {
 };
 
 export default function App() {
-  const [fruits, setFruits] = useState<Fruit[]>(() => {
-    localStorage.removeItem('freshvita_fruits');
-    return FRUITS_DATA;
-  });
+  const [fruits, setFruits] = useState<Fruit[]>(FRUITS_DATA);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [shouldAutoCheckout, setShouldAutoCheckout] = useState(false);
   const [selectedZoneId, setSelectedZoneId] = useState(DELIVERY_ZONES[0].id);
   const [userPoints, setUserPoints] = useState(100);
-  const [rewards, setRewards] = useState<Reward[]>(() => {
-    localStorage.removeItem('freshvita_rewards');
-    return REWARDS_DATA;
-  });
-  const [voucherTemplates, setVoucherTemplates] = useState(() => {
-    localStorage.removeItem('freshvita_voucher_templates');
-    return VOUCHER_TEMPLATES;
-  });
+  const [rewards, setRewards] = useState<Reward[]>(REWARDS_DATA);
+  const [voucherTemplates, setVoucherTemplates] = useState(VOUCHER_TEMPLATES);
+  const [fitnessPlans, setFitnessPlans] = useState<FitnessPlan[]>(FITNESS_PLANS);
+  const [checkupPackages, setCheckupPackages] = useState<CheckupPackage[]>(CHECKUP_PACKAGES);
+  const [subscriptionPlans, setSubscriptionPlans] = useState<SubscriptionPlan[]>(SUBSCRIPTION_PLANS);
   const [paymentQR, setPaymentQR] = useState('');
   const [reviews, setReviews] = useState<Review[]>(INITIAL_REVIEWS);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
@@ -4287,6 +4281,7 @@ export default function App() {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isProfileModalOpen, setIsProfileModalOpen] = useState(false);
+  const [isAdminPanelOpen, setIsAdminPanelOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -4307,14 +4302,16 @@ export default function App() {
     return saved ? JSON.parse(saved) : [];
   });
 
-  // Persistence Sync
   useEffect(() => {
     const loadPersistedData = async () => {
       try {
-        const [fruitsRes, rewardsRes, vouchersRes] = await Promise.all([
+        const [fruitsRes, rewardsRes, vouchersRes, fitnessRes, checkupRes, subscriptionRes] = await Promise.all([
           fetch('/api/data/fruits'),
           fetch('/api/data/rewards'),
-          fetch('/api/data/vouchers')
+          fetch('/api/data/vouchers'),
+          fetch('/api/data/fitness_plans'),
+          fetch('/api/data/checkup_packages'),
+          fetch('/api/data/subscription_plans')
         ]);
 
         if (fruitsRes.ok) {
@@ -4328,6 +4325,18 @@ export default function App() {
         if (vouchersRes.ok) {
           const data = await vouchersRes.json();
           if (data && Array.isArray(data)) setVoucherTemplates(data);
+        }
+        if (fitnessRes.ok) {
+          const data = await fitnessRes.json();
+          if (data && Array.isArray(data)) setFitnessPlans(data);
+        }
+        if (checkupRes.ok) {
+          const data = await checkupRes.json();
+          if (data && Array.isArray(data)) setCheckupPackages(data);
+        }
+        if (subscriptionRes.ok) {
+          const data = await subscriptionRes.json();
+          if (data && Array.isArray(data)) setSubscriptionPlans(data);
         }
       } catch (error) {
         console.error("Failed to sync with local database:", error);
@@ -4349,7 +4358,7 @@ export default function App() {
     // Simulated sound or visual feedback could go here
   };
 
-  const saveToServer = async (type: 'fruits' | 'rewards' | 'vouchers', data: any[]) => {
+  const saveToServer = async (type: 'fruits' | 'rewards' | 'vouchers' | 'fitness_plans' | 'checkup_packages' | 'subscription_plans', data: any[]) => {
     try {
       await fetch(`/api/data/${type}`, {
         method: 'POST',

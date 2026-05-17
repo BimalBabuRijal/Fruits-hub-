@@ -1,0 +1,4 @@
+[
+  { "id": "1", "name": "Basic Health Check", "description": "Essential overview for quick screening.", "price": 999, "originalPrice": 2499, "tests": ["CBC", "Blood Sugar", "Lipid Profile", "Lver Function", "Kidney Function", "TSH", "Urine Routine"] },
+  { "id": "2", "name": "Comprehensive Wellness", "description": "Full-body health assessment with doctor consulting.", "price": 2999, "originalPrice": 6999, "tests": ["All Basic tests", "HbA1c", "Vitamin D & B12", "Iron Studies", "ECG", "Doctor Consultation"] }
+]

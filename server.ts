@@ -13,6 +13,9 @@ const DATA_PATHS = {
   fruits: path.join(process.cwd(), 'public/data/fruits.json'),
   rewards: path.join(process.cwd(), 'public/data/rewards.json'),
   vouchers: path.join(process.cwd(), 'public/data/vouchers.json'),
+  fitness_plans: path.join(process.cwd(), 'public/data/fitness_plans.json'),
+  checkup_packages: path.join(process.cwd(), 'public/data/checkup_packages.json'),
+  subscription_plans: path.join(process.cwd(), 'public/data/subscription_plans.json'),
 };
 
 // API routes for data persistence

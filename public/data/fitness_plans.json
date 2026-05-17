@@ -1,0 +1,5 @@
+[
+  { "id": "1", "name": "Starter Wellness", "level": "Beginner", "description": "Perfect for starting your health journey.", "price": 2999, "features": ["Personalized diet chart", "Basic workout plan (3d/week)", "Weekly fruit box (2 kg)", "Email support"] },
+  { "id": "2", "name": "Active Life", "level": "Intermediate", "description": "Serious about fitness and nutrition together.", "price": 5499, "features": ["Custom meal plan", "Workout plan (5d/week)", "Weekly fruit box (4 kg)", "Nutritionist consultation (2x/month)", "BMI Tracking"] },
+  { "id": "3", "name": "Elite Health", "level": "Advanced", "description": "Complete wellness transformation.", "price": 9999, "features": ["Full nutrition coaching", "Daily workout plans", "Premium fruit box (6 kg/week)", "Weekly nutritionist calls", "Monthly lab checkup"] }
+]
