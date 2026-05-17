@@ -376,7 +376,7 @@ const FRUITS_DATA: Fruit[] = [
   },
   { 
     id: '3', 
-    name: 'Watermelon (Tarbuz)', 
+    name: 'Watermelon (Kharbuja)', 
     type: 'melon', 
     description: 'Juicy summer treat from the Tarai plains.', 
     price: 65, 
